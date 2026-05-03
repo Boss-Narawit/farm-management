@@ -1,0 +1,78 @@
+/* ============================================================
+ * api.js — Google Apps Script + LINE login + sync status
+ *
+ * Contents: sendAPI, loginLine, loginDemo, afterLogin, markSyncStatus, syncDot
+ * ============================================================ */
+
+// ===== API =====
+async function sendAPI(payload,msg,onOk){
+  if(CFG.APPS_SCRIPT_URL==='YOUR_GOOGLE_APPS_SCRIPT_URL'){await new Promise(r=>setTimeout(r,600));onOk();showOk('บันทึกสำเร็จ!',msg+'\n(โหมดทดสอบ — ยังไม่ได้ตั้งค่าเชื่อม Sheets)');markSyncStatus(payload,'local');return;}
+  showLoad('กำลังบันทึก...');
+  try{const r=await fetch(CFG.APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const d=await r.json();hideLoad();if(d.error)throw new Error(d.error);markSyncStatus(payload,'synced');onOk();showOk('บันทึกสำเร็จ!',msg);}
+  catch(e){hideLoad();markSyncStatus(payload,'failed');onOk();/*still apply locally*/showSyncBanner(true);}
+}
+
+
+// ===== LINE AUTH =====
+function loginDemo(){
+  user={displayName:'ผู้จัดการ (ทดสอบ)',userId:'demo',pictureUrl:''};
+  afterLogin();
+}
+function loginLine(){
+  if(CFG.LINE_CLIENT_ID==='YOUR_LINE_CLIENT_ID'){user={displayName:'ผู้จัดการ (ทดสอบ)',userId:'demo',pictureUrl:''};afterLogin();return;}
+  const st=Math.random().toString(36).slice(2);sessionStorage.setItem('ls',st);
+  window.location.href='https://access.line.me/oauth2/v2.1/authorize?'+new URLSearchParams({response_type:'code',client_id:CFG.LINE_CLIENT_ID,redirect_uri:CFG.REDIRECT_URI,state:st,scope:'profile openid'});
+}
+async function checkLine(){
+  const sv=sessionStorage.getItem('fu');if(sv){user=JSON.parse(sv);afterLogin();return;}
+  const p=new URLSearchParams(window.location.search),code=p.get('code'),state=p.get('state');if(!code)return;
+  if(state!==sessionStorage.getItem('ls')){alert('เกิดข้อผิดพลาด');return;}
+  showLoad('กำลังเข้าสู่ระบบ...');
+  try{const r=await fetch(CFG.APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'lineAuth',code,redirectUri:CFG.REDIRECT_URI})});const d=await r.json();if(d.error)throw new Error(d.error);if(!CFG.ALLOWED_USER_IDS.includes(d.userId)){hideLoad();alert('คุณไม่ได้รับอนุญาต');return;}user=d;sessionStorage.setItem('fu',JSON.stringify(d));window.history.replaceState({},'',window.location.pathname);afterLogin();}
+  catch(e){hideLoad();alert('เข้าสู่ระบบไม่สำเร็จ: '+e.message);}
+}
+function afterLogin(){hideLoad();const n=user.displayName||'ผู้จัดการ';document.getElementById('home-name').textContent=n;const w=document.getElementById('av-wrap');w.innerHTML=user.pictureUrl?`<img src="${user.pictureUrl}" class="av">`:`<div class="av-ph">${n[0]}</div>`;go('screen-home');}
+function logout(){if(!confirm('ออกจากระบบ?'))return;sessionStorage.removeItem('fu');user=null;go('screen-login');}
+
+
+
+
+// ===== SYNC STATUS =====
+function markSyncStatus(payload,status){
+  // payload may have action: addEmployee/addOutsource/addEmployeeBulk/addTruck
+  // Find the matching log by date+id and update its syncStatus
+  if(!payload||!payload.date)return;
+  const date=payload.date;
+  if(payload.action==='addEmployee' || payload.action==='editEmployee' || payload.action==='deleteEmployee'){
+    if(!logsCache[date])return;
+    // For add, find by name+task+ts (roughly). For simplicity, mark all 'pending' as 'status'
+    logsCache[date].forEach(l=>{if(l.syncStatus==='pending')l.syncStatus=status;});
+  } else if(payload.action==='addEmployeeBulk' && payload.names){
+    if(!logsCache[date])return;
+    payload.names.forEach(nm=>{
+      const log=logsCache[date].find(l=>l.name===nm && l.syncStatus==='pending');
+      if(log)log.syncStatus=status;
+    });
+  } else if(payload.action==='addOutsource' || payload.action==='editOutsource' || payload.action==='deleteOutsource'){
+    if(!outsourceLogsCache[date])return;
+    outsourceLogsCache[date].forEach(o=>{if(o.syncStatus==='pending')o.syncStatus=status;});
+  } else if(payload.action==='addTruck'){
+    if(!truckLogsCache[date])return;
+    truckLogsCache[date].forEach(t=>{if(t.syncStatus==='pending')t.syncStatus=status;});
+  }
+  saveLogs();
+}
+
+function showSyncBanner(isError){
+  // Optional helper — can be wired to UI later if needed.
+  // For now, individual sync dots tell the story.
+}
+
+function syncDot(status){
+  // Returns small HTML icon for a given sync status
+  if(status==='synced')return '<span class="sync-dot synced" title="ซิงก์แล้ว"></span>';
+  if(status==='pending')return '<span class="sync-dot pending" title="กำลังซิงก์"></span>';
+  if(status==='failed')return '<span class="sync-dot failed" title="ซิงก์ไม่สำเร็จ"></span>';
+  if(status==='local')return '<span class="sync-dot local" title="บันทึกในเครื่อง (ยังไม่ได้ตั้งค่าเชื่อม Sheets)"></span>';
+  return '';
+}

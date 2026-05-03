@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a8f5c">
+  <title>ระบบบันทึกงานไร่อ้อย</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="screen-login" class="screen active">
+  <div class="lcard">
+    <div class="llogo"><svg width="38" height="38" viewBox="0 0 38 38" fill="none"><path d="M5 31C5 17 33 17 33 5" stroke="#1a8f5c" stroke-width="3" stroke-linecap="round"/><circle cx="19" cy="19" r="5" fill="#1a8f5c"/><path d="M11 7L11 15M27 23L27 31" stroke="#1a8f5c" stroke-width="2.5" stroke-linecap="round"/></svg></div>
+    <div class="ltitle">ระบบจัดการฟาร์ม</div>
+    <div class="lsub">สำหรับผู้จัดการเท่านั้น<br>กรุณาเข้าสู่ระบบด้วย LINE</div>
+    <button class="line-btn" onclick="loginLine()">
+      <svg width="25" height="25" viewBox="0 0 24 24" fill="white"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.07 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+      เข้าสู่ระบบด้วย LINE
+    </button>
+    <button class="demo-btn" onclick="loginDemo()">&#9654; ทดสอบระบบ (ไม่ต้อง Login)</button>
+    <div class="lnote">เฉพาะผู้จัดการที่ได้รับอนุญาตเท่านั้น</div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="screen-home" class="screen">
+  <div class="topbar">
+    <div style="flex:1"><div style="font-size:12px;opacity:.8">ระบบจัดการฟาร์ม</div><div class="topbar-title">หน้าหลัก</div></div>
+    <div id="av-wrap"></div>
+  </div>
+  <div class="home-body">
+    <div style="font-size:14px;color:var(--mu)">สวัสดี,</div>
+    <div style="font-size:21px;font-weight:700;margin-bottom:20px" id="home-name">ผู้จัดการ</div>
+    <div class="sec-label">ภาพรวม</div>
+    <button class="menu-btn" onclick="go('screen-dash')">
+      <div class="mi" style="background:#e8f5ee"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1a8f5c" stroke-width="2" stroke-linecap="round"><rect x="2" y="2" width="9" height="9" rx="1.5"/><rect x="13" y="2" width="9" height="9" rx="1.5"/><rect x="2" y="13" width="9" height="9" rx="1.5"/><rect x="13" y="13" width="9" height="9" rx="1.5"/></svg></div>
+      <div style="flex:1"><div class="mt">แดชบอร์ด</div><div class="md">ตรวจสอบการลงเวลา · สรุปรายเดือน</div></div>
+      <div style="font-size:22px;color:var(--bd);margin-left:auto">›</div>
+    </button>
+    <div class="sec-label" style="margin-top:13px">บันทึกข้อมูล</div>
+    <button class="menu-btn" onclick="go('screen-bulk');initBulkLog()">
+      <div class="mi" style="background:#e8f5ee"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1a8f5c" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div>
+      <div style="flex:1"><div class="mt">บันทึกหลายคนพร้อมกัน</div><div class="md">เลือกหลายคน · งานเดียวกัน · เร็วขึ้น</div></div>
+      <div style="font-size:22px;color:var(--bd);margin-left:auto">›</div>
+    </button>
+    <button class="menu-btn" onclick="go('screen-employee')">
+      <div class="mi" style="background:#e8f5ee"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1a8f5c" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="7" r="4"/><path d="M2 21c0-4 3-7 7-7h0c4 0 7 3 7 7"/><path d="M17 11l2 2 4-4"/></svg></div>
+      <div style="flex:1"><div class="mt">บันทึกงานพนักงาน</div><div class="md">ชื่อ · งาน · เวลาทำงาน</div></div>
+      <div style="font-size:22px;color:var(--bd);margin-left:auto">›</div>
+    </button>
+    <button class="menu-btn" onclick="go('screen-truck')">
+      <div class="mi" style="background:#fef3e2"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e67e22" stroke-width="2" stroke-linecap="round"><rect x="1" y="6" width="15" height="11" rx="2"/><path d="M16 9h4l3 4v4h-7V9z"/><circle cx="5.5" cy="19" r="2.5"/><circle cx="19.5" cy="19" r="2.5"/></svg></div>
+      <div style="flex:1"><div class="mt">บันทึกรถขนอ้อย</div><div class="md">ทะเบียน · น้ำหนัก · วันที่</div></div>
+      <div style="font-size:22px;color:var(--bd);margin-left:auto">›</div>
+    </button>
+    <button class="menu-btn" onclick="go('screen-outsource');initOutsourceForm()">
+      <div class="mi" style="background:#fef3e2"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e67e22" stroke-width="2" stroke-linecap="round"><path d="M3 7h18M3 12h18M3 17h12"/><circle cx="20" cy="17" r="3"/></svg></div>
+      <div style="flex:1"><div class="mt">บันทึกงานเหมา</div><div class="md">ผู้รับเหมา · แปลง · ค่าจ้าง</div></div>
+      <div style="font-size:22px;color:var(--bd);margin-left:auto">›</div>
+    </button>
+    <div class="sec-label" style="margin-top:13px">จัดการข้อมูล</div>
+    <button class="menu-btn" onclick="go('screen-master');switchTab('employees')">
+      <div class="mi" style="background:#f0ebff"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c5cbf" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 9h10M7 13h10M7 17h6"/></svg></div>
+      <div style="flex:1"><div class="mt">ข้อมูลพนักงาน / รถ</div><div class="md">เพิ่ม · แก้ไข · ลบ รายชื่อ</div></div>
+      <div style="font-size:22px;color:var(--bd);margin-left:auto">›</div>
+    </button>
+    <div class="sec-label" style="margin-top:13px">สำรองข้อมูล</div>
+    <button class="menu-btn" onclick="exportBackup()">
+      <div class="mi" style="background:#dbeafe"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"><path d="M12 2v14M5 9l7 7 7-7M3 21h18"/></svg></div>
+      <div style="flex:1"><div class="mt">ดาวน์โหลดข้อมูลสำรอง</div><div class="md">เก็บข้อมูลทั้งหมดไว้ในไฟล์</div></div>
+      <div style="font-size:22px;color:var(--bd);margin-left:auto">›</div>
+    </button>
+    <button class="menu-btn" onclick="document.getElementById('restore-input').click()">
+      <div class="mi" style="background:#dbeafe"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"><path d="M12 22V8M5 15l7-7 7 7M3 3h18"/></svg></div>
+      <div style="flex:1"><div class="mt">กู้คืนข้อมูลจากไฟล์</div><div class="md">นำเข้าจากไฟล์สำรอง</div></div>
+      <div style="font-size:22px;color:var(--bd);margin-left:auto">›</div>
+    </button>
+    <input type="file" id="restore-input" accept=".json" style="display:none" onchange="importBackup(event)">
+
+    <button class="lo-btn" onclick="logout()">ออกจากระบบ</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="screen-dash" class="screen">
+  <div class="topbar">
+    <button class="ib" onclick="go('screen-home')">‹</button>
+    <div class="topbar-title">แดชบอร์ด</div>
+  </div>
+  <div class="dash-body">
+    <div class="view-toggle">
+      <button class="vt-btn active" id="vt-today" onclick="setView('today')">วันนี้</button>
+      <button class="vt-btn" id="vt-month" onclick="setView('month')">รายเดือน</button>
+    </div>
+    <div class="dash-scroll" id="dash-scroll">
+      <!-- rendered by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- DAY DETAIL SHEET -->
+<div class="dds-backdrop" id="dds-bd">
+  <div class="dds-sheet">
+    <div class="dds-header">
+      <div class="dds-title" id="dds-title"></div>
+      <button class="dds-close" onclick="closeDDS()">✕</button>
+    </div>
+    <div class="dds-sub" id="dds-sub"></div>
+    <div class="dds-scroll" id="dds-body"></div>
+    <button class="dds-goto" id="dds-goto-btn" onclick="ddsSwitchToday()">ดูรายละเอียดวันนี้ ›</button>
+  </div>
+</div>
+
+<!-- QUICK LOG SHEET -->
+<div class="qlog-backdrop" id="qlog-bd">
+  <div class="qlog-sheet">
+    <div class="qlog-name" id="ql-name"></div>
+    <div class="qlog-sub" id="ql-date-label"></div>
+    <label class="qlog-label">งานที่ทำ</label>
+    <input type="text" id="ql-task" class="qlog-input" placeholder="เช่น ตัดอ้อย, ไถนา, รดน้ำ...">
+    <label class="qlog-label">ระยะเวลา</label>
+    <div class="dur-row">
+      <button class="dur-btn sel" id="ql-full" onclick="setQLDur('เต็มวัน')">เต็มวัน</button>
+      <button class="dur-btn" id="ql-half" onclick="setQLDur('ครึ่งวัน')">ครึ่งวัน</button>
+    </div>
+    <button class="qlog-confirm" onclick="confirmQL()">บันทึก</button>
+    <button class="qlog-cancel" onclick="closeQL()">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- EMPLOYEE FORM -->
+<div id="screen-employee" class="screen">
+  <div class="topbar"><button class="ib" onclick="go('screen-home')">‹</button><div class="topbar-title">บันทึกงานพนักงาน</div></div>
+  <div class="form-body">
+    <div class="err" id="emp-err"></div>
+    <div class="fg"><label class="fl">วันที่</label><div class="ddisplay" id="emp-dd"></div><input type="date" id="emp-date" class="fi" onchange="updateDD('emp-date','emp-dd')"></div>
+    <div class="fg">
+      <label class="fl">ชื่อพนักงาน</label>
+      <div class="cw">
+        <input type="text" id="emp-name" class="ci" placeholder="พิมพ์หรือเลือกชื่อ..." autocomplete="off"
+          oninput="fCombo('emp-name','emp-nd','employees')"
+          onfocus="oCombo('emp-name','emp-nd','employees')"
+          onblur="dClose('emp-nd')">
+        <span class="ca">▾</span><div id="emp-nd" class="cdrop"></div>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">งานที่ทำ</label>
+      <div class="cw">
+        <input type="text" id="emp-task" class="ci" placeholder="พิมพ์หรือเลือกงาน..." autocomplete="off"
+          oninput="fCombo('emp-task','emp-task-d','tasks')"
+          onfocus="oCombo('emp-task','emp-task-d','tasks')"
+          onblur="dClose('emp-task-d')">
+        <span class="ca">▾</span><div id="emp-task-d" class="cdrop"></div>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">แปลง / สถานที่ <span class="opt">(ถ้ามี)</span></label>
+      <div class="cw">
+        <input type="text" id="emp-loc" class="ci" placeholder="พิมพ์หรือเลือกแปลง..." autocomplete="off"
+          oninput="fCombo('emp-loc','emp-loc-d','locations')"
+          onfocus="oCombo('emp-loc','emp-loc-d','locations')"
+          onblur="dClose('emp-loc-d')">
+        <span class="ca">&#9662;</span><div id="emp-loc-d" class="cdrop"></div>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">ระยะเวลาทำงาน</label>
+      <div class="tr2">
+        <button class="tb sel" id="tog-full" onclick="setDur('เต็มวัน')">เต็มวัน</button>
+        <button class="tb" id="tog-half" onclick="setDur('ครึ่งวัน')">ครึ่งวัน</button>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">หมายเหตุ <span class="opt">(ถ้ามี)</span></label><input type="text" id="emp-note" class="fi" placeholder="ข้อมูลเพิ่มเติม..."></div>
+    <button class="sub-btn" onclick="submitEmp()">บันทึก</button>
+  </div>
+</div>
+
+<!-- TRUCK FORM -->
+<div id="screen-truck" class="screen">
+  <div class="topbar"><button class="ib" onclick="go('screen-home')">‹</button><div class="topbar-title">บันทึกรถขนอ้อย</div></div>
+  <div class="form-body">
+    <div class="err" id="truck-err"></div>
+    <div class="fg"><label class="fl">วันที่</label><div class="ddisplay" id="truck-dd"></div><input type="date" id="truck-date" class="fi" onchange="updateDD('truck-date','truck-dd')"></div>
+    <div class="fg">
+      <label class="fl">ทะเบียนรถ</label>
+      <div class="cw">
+        <input type="text" id="truck-plate" class="ci" placeholder="พิมพ์หรือเลือกทะเบียน..." autocomplete="off"
+          oninput="fCombo('truck-plate','truck-pd','trucks')"
+          onfocus="oCombo('truck-plate','truck-pd','trucks')"
+          onblur="dClose('truck-pd')">
+        <span class="ca">▾</span><div id="truck-pd" class="cdrop"></div>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">น้ำหนัก (กิโลกรัม)</label><input type="number" id="truck-weight" class="fi" placeholder="0" inputmode="numeric"></div>
+    <div class="fg"><label class="fl">ชื่อคนขับ <span class="opt">(ถ้ามี)</span></label><input type="text" id="truck-driver" class="fi" placeholder="ชื่อคนขับรถ..."></div>
+    <div class="fg"><label class="fl">หมายเหตุ <span class="opt">(ถ้ามี)</span></label><input type="text" id="truck-note" class="fi" placeholder="ข้อมูลเพิ่มเติม..."></div>
+    <button class="sub-btn" onclick="submitTruck()">บันทึก</button>
+  </div>
+</div>
+
+<!-- MASTER DATA -->
+<div id="screen-master" class="screen">
+  <div class="topbar"><button class="ib" onclick="go('screen-home')">‹</button><div class="topbar-title">จัดการข้อมูล</div></div>
+  <div class="tab-bar">
+    <div class="tab active" id="tab-employees" onclick="switchTab('employees')">พนักงาน</div>
+    <div class="tab" id="tab-trucks" onclick="switchTab('trucks')">ทะเบียนรถ</div>
+    <div class="tab" id="tab-locations" onclick="switchTab('locations')">แปลง</div>
+    <div class="tab" id="tab-tasks" onclick="switchTab('tasks')">งาน</div>
+    <div class="tab" id="tab-contractors" onclick="switchTab('contractors')">ผู้รับเหมา</div>
+  </div>
+  <div class="mbody">
+    <div id="panel-employees"><button class="add-btn" onclick="openEmpMod()">+ เพิ่มพนักงานใหม่</button><div id="emp-list"></div></div>
+    <div id="panel-trucks" style="display:none"><button class="add-btn am" onclick="openTruckMod()">+ เพิ่มทะเบียนรถใหม่</button><div id="truck-list"></div></div>
+    <div id="panel-locations" style="display:none"><button class="add-btn" style="background:var(--tl)" onclick="openLocMod()">+ เพิ่มแปลงใหม่</button><div id="loc-list"></div></div>
+    <div id="panel-tasks" style="display:none"><button class="add-btn" style="background:var(--pu)" onclick="openTaskMod()">+ เพิ่มงานใหม่</button><div id="task-list"></div></div>
+    <div id="panel-contractors" style="display:none"><button class="add-btn" style="background:var(--am)" onclick="openContractorMod()">+ เพิ่มผู้รับเหมาใหม่</button><div id="contractor-list"></div></div>
+  </div>
+</div>
+
+<!-- MODAL LOCATION -->
+<div class="mbk" id="mod-loc">
+  <div class="modal">
+    <div class="mtitle" id="mod-loc-t">เพิ่มแปลงใหม่</div>
+    <div class="mr2">
+      <div class="mf"><label class="ml">ชื่อแปลง</label><input type="text" id="ml-name" class="mi2" placeholder="เช่น แปลง A, นาหลัง"></div>
+      <div class="mf"><label class="ml">รหัสแปลง <span class="opt">(ถ้ามี)</span></label><input type="text" id="ml-id" class="mi2" placeholder="เช่น P001"></div>
+    </div>
+    <div class="mr2">
+      <div class="mf"><label class="ml">ขนาด (ไร่) <span class="opt">(ถ้ามี)</span></label><input type="number" id="ml-size" class="mi2" placeholder="เช่น 10.5" inputmode="decimal" step="0.5"></div>
+      <div class="mf"><label class="ml">ประเภทแปลง <span class="opt">(ถ้ามี)</span></label>
+        <select id="ml-class" class="mi2">
+          <option value="">— เลือก —</option>
+          <option>ไร่อ้อย</option><option>นาข้าว</option><option>สวน</option><option>ที่รกร้าง</option><option>อื่นๆ</option>
+        </select>
+      </div>
+    </div>
+    <div class="mf"><label class="ml">เริ่มฤดูปัจจุบัน <span class="opt">(ถ้ามี — สรุปยอดต่อฤดู)</span></label><input type="date" id="ml-season" class="mi2"></div>
+    <div class="mf"><label class="ml">ที่อยู่ / พิกัด <span class="opt">(ถ้ามี)</span></label><input type="text" id="ml-loc" class="mi2" placeholder="เช่น ทิศเหนือของไร่, 14.123, 101.456"></div>
+    <div class="mf"><label class="ml">รายละเอียด <span class="opt">(ถ้ามี)</span></label><input type="text" id="ml-detail" class="mi2" placeholder="เช่น ดินร่วน, ใกล้คลองชลประทาน"></div>
+    <div class="mf"><label class="ml">หมายเหตุ <span class="opt">(ถ้ามี)</span></label><input type="text" id="ml-note" class="mi2" placeholder="ข้อมูลเพิ่มเติม..."></div>
+    <div class="mac"><button class="mc" onclick="closeMod('mod-loc')">ยกเลิก</button><button class="ms" style="background:var(--tl)" onclick="saveLoc()">บันทึก</button></div>
+  </div>
+</div>
+
+<!-- MODAL EDIT OUTSOURCE LOG -->
+<div class="mbk" id="mod-editos">
+  <div class="modal">
+    <div class="mtitle">แก้ไขงานเหมา</div>
+    <div class="mf"><label class="ml">วันที่</label><div class="mi2" style="background:#f9fafb" id="eo-date"></div></div>
+    <div class="mf">
+      <label class="ml">แปลง</label>
+      <div class="cw">
+        <input type="text" id="eo-loc" class="mi2" style="padding-right:36px" autocomplete="off"
+          oninput="fCombo('eo-loc','eo-loc-d','locations')"
+          onfocus="oCombo('eo-loc','eo-loc-d','locations')"
+          onblur="dClose('eo-loc-d')">
+        <span class="ca">&#9662;</span><div id="eo-loc-d" class="cdrop"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <label class="ml">งานที่ทำ</label>
+      <div class="cw">
+        <input type="text" id="eo-task" class="mi2" style="padding-right:36px" autocomplete="off"
+          oninput="fCombo('eo-task','eo-task-d','tasks')"
+          onfocus="oCombo('eo-task','eo-task-d','tasks')"
+          onblur="dClose('eo-task-d')">
+        <span class="ca">&#9662;</span><div id="eo-task-d" class="cdrop"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <label class="ml">ผู้รับเหมา</label>
+      <div class="cw">
+        <input type="text" id="eo-contractor" class="mi2" style="padding-right:36px" autocomplete="off"
+          oninput="fCombo('eo-contractor','eo-contractor-d','contractors')"
+          onfocus="oCombo('eo-contractor','eo-contractor-d','contractors')"
+          onblur="dClose('eo-contractor-d')">
+        <span class="ca">&#9662;</span><div id="eo-contractor-d" class="cdrop"></div>
+      </div>
+    </div>
+    <div class="mf"><label class="ml">ค่าจ้าง (บาท)</label><input type="number" id="eo-fee" class="mi2" inputmode="decimal" step="0.01"></div>
+    <div class="mf"><label class="ml">หมายเหตุ <span class="opt">(ถ้ามี)</span></label><input type="text" id="eo-note" class="mi2"></div>
+    <div class="mac">
+      <button class="mc" onclick="deleteOSLog()" style="color:var(--rd);border-color:#fca5a5">&#128465; ลบ</button>
+      <button class="ms" style="background:var(--am)" onclick="saveOSLog()">&#10003; บันทึก</button>
+    </div>
+    <button class="lo-btn" onclick="closeMod('mod-editos')" style="margin-top:8px">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- MODAL EMP -->
+<div class="mbk" id="mod-emp">
+  <div class="modal">
+    <div class="mtitle" id="mod-emp-t">เพิ่มพนักงานใหม่</div>
+    <div class="mr2">
+      <div class="mf"><label class="ml">ชื่อ</label><input type="text" id="me-first" class="mi2" placeholder="ชื่อ"></div>
+      <div class="mf"><label class="ml">นามสกุล <span class="opt">(ถ้ามี)</span></label><input type="text" id="me-last" class="mi2" placeholder="นามสกุล"></div>
+    </div>
+    <div class="mr2">
+      <div class="mf"><label class="ml">ปีเกิด พ.ศ. <span class="opt">(ถ้ามี)</span></label><input type="number" id="me-year" class="mi2" placeholder="เช่น 2500" inputmode="numeric"></div>
+      <div class="mf"><label class="ml">สัญชาติ</label>
+        <select id="me-nat" class="mi2"><option>ไทย</option><option>เมียนมา</option><option>ลาว</option><option>กัมพูชา</option><option>เวียดนาม</option><option>อื่นๆ</option></select>
+      </div>
+    </div>
+    <div class="mac"><button class="mc" onclick="closeMod('mod-emp')">ยกเลิก</button><button class="ms" onclick="saveEmp()">บันทึก</button></div>
+  </div>
+</div>
+
+<!-- MODAL TRUCK -->
+<div class="mbk" id="mod-truck">
+  <div class="modal">
+    <div class="mtitle" id="mod-truck-t">เพิ่มทะเบียนรถใหม่</div>
+    <div class="mf"><label class="ml">ทะเบียนรถ</label><input type="text" id="mt-plate" class="mi2" placeholder="เช่น กข 1234 กรุงเทพฯ" style="text-transform:uppercase"></div>
+    <div class="mf"><label class="ml">ประเภทรถ <span class="opt">(ถ้ามี)</span></label><input type="text" id="mt-type" class="mi2" placeholder="เช่น รถสิบล้อ, รถหกล้อ"></div>
+    <div class="mf"><label class="ml">หมายเหตุ <span class="opt">(ถ้ามี)</span></label><input type="text" id="mt-note" class="mi2" placeholder="ข้อมูลเพิ่มเติม..."></div>
+    <div class="mac"><button class="mc" onclick="closeMod('mod-truck')">ยกเลิก</button><button class="ms am" onclick="saveTruck()">บันทึก</button></div>
+  </div>
+</div>
+
+<!-- MODAL TASK -->
+<div class="mbk" id="mod-task">
+  <div class="modal">
+    <div class="mtitle" id="mod-task-t">เพิ่มงานใหม่</div>
+    <div class="mr2">
+      <div class="mf"><label class="ml">ชื่องาน</label><input type="text" id="mtk-name" class="mi2" placeholder="เช่น ตัดอ้อย, ไถนา"></div>
+      <div class="mf"><label class="ml">ค่าแรง/วัน (บาท)</label><input type="number" id="mtk-rate" class="mi2" placeholder="เช่น 400" inputmode="numeric" step="0.01"></div>
+    </div>
+    <div class="mf" style="background:var(--gl);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--gd)">
+      💡 เต็มวัน = ค่าแรงเต็ม · ครึ่งวัน = ครึ่งหนึ่ง
+    </div>
+    <div class="mf"><label class="ml">หมวดหมู่ <span class="opt">(ถ้ามี)</span></label>
+      <select id="mtk-cat" class="mi2">
+        <option value="">— เลือก —</option>
+        <option>เพาะปลูก</option><option>ดูแลรักษา</option><option>เก็บเกี่ยว</option>
+        <option>ขนส่ง</option><option>ซ่อมบำรุง</option><option>อื่นๆ</option>
+      </select>
+    </div>
+    <div class="mf"><label class="ml">หมายเหตุ <span class="opt">(ถ้ามี)</span></label><input type="text" id="mtk-note" class="mi2" placeholder="ข้อมูลเพิ่มเติม..."></div>
+    <div class="mac"><button class="mc" onclick="closeMod('mod-task')">ยกเลิก</button><button class="ms" style="background:var(--pu)" onclick="saveTask()">บันทึก</button></div>
+  </div>
+</div>
+
+<!-- MODAL CONTRACTOR -->
+<div class="mbk" id="mod-contractor">
+  <div class="modal">
+    <div class="mtitle" id="mod-contractor-t">เพิ่มผู้รับเหมาใหม่</div>
+    <div class="mr2">
+      <div class="mf"><label class="ml">ชื่อผู้รับเหมา</label><input type="text" id="mc-name" class="mi2" placeholder="เช่น เฮียสมศักดิ์"></div>
+      <div class="mf"><label class="ml">เบอร์โทร <span class="opt">(ถ้ามี)</span></label><input type="tel" id="mc-phone" class="mi2" placeholder="08X-XXX-XXXX"></div>
+    </div>
+    <div class="mf"><label class="ml">งานที่รับ <span class="opt">(ถ้ามี)</span></label><input type="text" id="mc-specialty" class="mi2" placeholder="เช่น รับเหมาตัด-โหลด-ส่ง"></div>
+    <div class="mf"><label class="ml">หมายเหตุ <span class="opt">(ถ้ามี)</span></label><input type="text" id="mc-note" class="mi2" placeholder="ข้อมูลเพิ่มเติม..."></div>
+    <div class="mac"><button class="mc" onclick="closeMod('mod-contractor')">ยกเลิก</button><button class="ms" style="background:var(--am)" onclick="saveContractor()">บันทึก</button></div>
+  </div>
+</div>
+
+<!-- MODAL EDIT LOG -->
+<div class="mbk" id="mod-editlog">
+  <div class="modal">
+    <div class="mtitle">แก้ไขบันทึก</div>
+    <div class="mf"><label class="ml">ชื่อพนักงาน</label><div class="mi2" style="background:#f9fafb" id="el-name"></div></div>
+    <div class="mf"><label class="ml">วันที่</label><div class="mi2" style="background:#f9fafb" id="el-date"></div></div>
+    <div class="mf"><label class="ml">งานที่ทำ</label>
+      <div class="cw">
+        <input type="text" id="el-task" class="mi2" style="padding-right:36px" placeholder="พิมพ์หรือเลือกงาน..." autocomplete="off"
+          oninput="fCombo('el-task','el-task-d','tasks')" onfocus="oCombo('el-task','el-task-d','tasks')" onblur="dClose('el-task-d')">
+        <span class="ca">▾</span><div id="el-task-d" class="cdrop"></div>
+      </div>
+    </div>
+    <div class="mf"><label class="ml">สถานที่ <span class="opt">(ถ้ามี)</span></label>
+      <div class="cw">
+        <input type="text" id="el-loc" class="mi2" style="padding-right:36px" placeholder="พิมพ์หรือเลือกแปลง..." autocomplete="off"
+          oninput="fCombo('el-loc','el-loc-d','locations')" onfocus="oCombo('el-loc','el-loc-d','locations')" onblur="dClose('el-loc-d')">
+        <span class="ca">▾</span><div id="el-loc-d" class="cdrop"></div>
+      </div>
+    </div>
+    <div class="mf"><label class="ml">ระยะเวลา</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        <button class="tb sel" id="el-full" onclick="setELDur('เต็มวัน')">เต็มวัน</button>
+        <button class="tb" id="el-half" onclick="setELDur('ครึ่งวัน')">ครึ่งวัน</button>
+      </div>
+    </div>
+    <div class="mac">
+      <button class="mc" onclick="deleteLog()" style="color:var(--rd);border-color:#fca5a5">🗑 ลบ</button>
+      <button class="ms" onclick="saveEditLog()">✓ บันทึก</button>
+    </div>
+    <button class="lo-btn" onclick="closeMod('mod-editlog')" style="margin-top:8px">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- BULK LOG SCREEN -->
+<div id="screen-bulk" class="screen">
+  <div class="topbar"><button class="ib" onclick="go('screen-home')">‹</button><div class="topbar-title">บันทึกหลายคนพร้อมกัน</div></div>
+  <div class="form-body" style="padding-bottom:80px">
+    <div class="err" id="bulk-err"></div>
+    <div class="fg"><label class="fl">วันที่</label><div class="ddisplay" id="bulk-dd"></div><input type="date" id="bulk-date" class="fi" onchange="updateDD('bulk-date','bulk-dd')"></div>
+    <div class="fg"><label class="fl">งานที่ทำ (ใช้กับทุกคน)</label>
+      <div class="cw"><input type="text" id="bulk-task" class="ci" placeholder="พิมพ์หรือเลือกงาน..." autocomplete="off" oninput="fCombo('bulk-task','bulk-task-d','tasks')" onfocus="oCombo('bulk-task','bulk-task-d','tasks')" onblur="dClose('bulk-task-d')"><span class="ca">▾</span><div id="bulk-task-d" class="cdrop"></div></div>
+    </div>
+    <div class="fg"><label class="fl">สถานที่ <span class="opt">(ถ้ามี)</span></label>
+      <div class="cw"><input type="text" id="bulk-loc" class="ci" placeholder="พิมพ์หรือเลือกแปลง..." autocomplete="off" oninput="fCombo('bulk-loc','bulk-loc-d','locations')" onfocus="oCombo('bulk-loc','bulk-loc-d','locations')" onblur="dClose('bulk-loc-d')"><span class="ca">▾</span><div id="bulk-loc-d" class="cdrop"></div></div>
+    </div>
+    <div class="fg"><label class="fl">ระยะเวลา</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        <button class="tb sel" id="bulk-full-btn" onclick="setBulkDur('เต็มวัน')">เต็มวัน</button>
+        <button class="tb" id="bulk-half-btn" onclick="setBulkDur('ครึ่งวัน')">ครึ่งวัน</button>
+      </div>
+    </div>
+    <div class="fg">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <label class="fl" style="margin:0">เลือกพนักงาน</label>
+        <button class="bulk-select-all-btn" onclick="toggleSelectAll()" id="bulk-select-all-btn">เลือกทั้งหมด</button>
+      </div>
+      <div class="bulk-emp-grid" id="bulk-emp-grid"></div>
+    </div>
+  </div>
+  <div class="bulk-action-bar">
+    <div class="bulk-count" id="bulk-count">เลือกแล้ว 0 คน</div>
+    <button class="sub-btn" style="margin:0;padding:14px 24px;font-size:16px;width:auto" onclick="submitBulk()">บันทึก</button>
+  </div>
+</div>
+
+<!-- OUTSOURCE LOG SCREEN -->
+<div id="screen-outsource" class="screen">
+  <div class="topbar"><button class="ib" onclick="go('screen-home')">‹</button><div class="topbar-title">บันทึกงานเหมา</div></div>
+  <div class="form-body">
+    <div class="err" id="os-err"></div>
+    <div class="fg"><label class="fl">วันที่</label><div class="ddisplay" id="os-dd"></div><input type="date" id="os-date" class="fi" onchange="updateDD('os-date','os-dd')"></div>
+    <div class="fg"><label class="fl">แปลง</label>
+      <div class="cw"><input type="text" id="os-loc" class="ci" placeholder="พิมพ์หรือเลือกแปลง..." autocomplete="off" oninput="fCombo('os-loc','os-loc-d','locations')" onfocus="oCombo('os-loc','os-loc-d','locations')" onblur="dClose('os-loc-d')"><span class="ca">▾</span><div id="os-loc-d" class="cdrop"></div></div>
+    </div>
+    <div class="fg"><label class="fl">งานที่ทำ</label>
+      <div class="cw"><input type="text" id="os-task" class="ci" placeholder="พิมพ์หรือเลือกงาน..." autocomplete="off" oninput="fCombo('os-task','os-task-d','tasks')" onfocus="oCombo('os-task','os-task-d','tasks')" onblur="dClose('os-task-d')"><span class="ca">▾</span><div id="os-task-d" class="cdrop"></div></div>
+    </div>
+    <div class="fg"><label class="fl">ผู้รับเหมา</label>
+      <div class="cw"><input type="text" id="os-contractor" class="ci" placeholder="พิมพ์หรือเลือกผู้รับเหมา..." autocomplete="off" oninput="fCombo('os-contractor','os-contractor-d','contractors')" onfocus="oCombo('os-contractor','os-contractor-d','contractors')" onblur="dClose('os-contractor-d')"><span class="ca">▾</span><div id="os-contractor-d" class="cdrop"></div></div>
+    </div>
+    <div class="fg"><label class="fl">ค่าจ้าง (บาท)</label><input type="number" id="os-fee" class="fi" placeholder="0" inputmode="decimal" step="0.01"></div>
+    <div class="fg"><label class="fl">หมายเหตุ <span class="opt">(ถ้ามี)</span></label><input type="text" id="os-note" class="fi" placeholder="ข้อมูลเพิ่มเติม..."></div>
+    <button class="sub-btn" style="background:var(--am)" onclick="submitOutsource()">บันทึก</button>
+  </div>
+</div>
+
+<!-- EMPLOYEE DETAIL SCREEN -->
+<div id="screen-edet" class="screen">
+  <div class="topbar"><button class="ib" onclick="go('screen-dash')">‹</button><div class="topbar-title">รายละเอียดพนักงาน</div></div>
+  <div class="edet-header">
+    <div id="edet-name" class="edet-name"></div>
+    <div id="edet-sub" class="edet-sub"></div>
+    <div class="edet-stats">
+      <div class="edet-stat"><div class="edet-stat-num" id="edet-full">0</div><div class="edet-stat-lbl">วันเต็ม</div></div>
+      <div class="edet-stat"><div class="edet-stat-num" id="edet-half">0</div><div class="edet-stat-lbl">ครึ่งวัน</div></div>
+      <div class="edet-stat"><div class="edet-stat-num" id="edet-total">0</div><div class="edet-stat-lbl">รวม (วัน)</div></div>
+    </div>
+    <div id="edet-wage-box" style="margin-top:12px;padding:11px 14px;background:rgba(255,255,255,.22);border-radius:11px;display:none;align-items:center;gap:10px">
+      <div style="font-size:13px;opacity:.9">ค่าแรงรวม</div>
+      <div style="margin-left:auto;font-size:22px;font-weight:700" id="edet-wage">0฿</div>
+    </div>
+  </div>
+  <div class="edet-month-nav">
+    <button class="dn-btn" onclick="edetShiftMonth(-1)">‹</button>
+    <div class="edet-month-center" id="edet-month-label"></div>
+    <button class="dn-btn" onclick="edetShiftMonth(1)">›</button>
+  </div>
+  <div class="edet-actions">
+    <button class="edet-action-btn print" onclick="window.print()">🖨 พิมพ์ / PDF</button>
+    <button class="edet-action-btn" onclick="edetCopy()">📋 คัดลอกข้อความ</button>
+  </div>
+  <div class="edet-body" id="edet-body"></div>
+</div>
+
+<!-- TRUCK DETAIL SCREEN -->
+<div id="screen-tdet" class="screen">
+  <div class="topbar"><button class="ib" onclick="go('screen-master');switchTab('trucks')">‹</button><div class="topbar-title">รายละเอียดรถ</div></div>
+  <div class="edet-header" style="background:linear-gradient(135deg,var(--am),var(--ad))">
+    <div id="tdet-plate" class="edet-name"></div>
+    <div id="tdet-sub" class="edet-sub"></div>
+    <div class="edet-stats">
+      <div class="edet-stat"><div class="edet-stat-num" id="tdet-trips">0</div><div class="edet-stat-lbl">เที่ยว</div></div>
+      <div class="edet-stat"><div class="edet-stat-num" id="tdet-weight">0</div><div class="edet-stat-lbl">รวม (ตัน)</div></div>
+      <div class="edet-stat"><div class="edet-stat-num" id="tdet-avg">0</div><div class="edet-stat-lbl">เฉลี่ย/เที่ยว (กก.)</div></div>
+    </div>
+  </div>
+  <div class="edet-month-nav">
+    <button class="dn-btn" onclick="tdetShiftMonth(-1)">‹</button>
+    <div class="edet-month-center" id="tdet-month-label"></div>
+    <button class="dn-btn" onclick="tdetShiftMonth(1)">›</button>
+  </div>
+  <div class="edet-actions">
+    <button class="edet-action-btn print" onclick="window.print()">🖨 พิมพ์ / PDF</button>
+    <button class="edet-action-btn" onclick="tdetCopy()" style="background:var(--al);border-color:var(--am);color:var(--ad)">📋 คัดลอกข้อความ</button>
+  </div>
+  <div class="edet-body" id="tdet-body"></div>
+</div>
+
+<!-- LOCATION DETAIL SCREEN -->
+<div id="screen-ldet" class="screen">
+  <div class="topbar"><button class="ib" onclick="go('screen-master');switchTab('locations')">‹</button><div class="topbar-title">รายละเอียดแปลง</div></div>
+  <div class="edet-header" style="background:linear-gradient(135deg,var(--tl),var(--tld))">
+    <div id="ldet-name" class="edet-name"></div>
+    <div id="ldet-sub" class="edet-sub"></div>
+    <div class="edet-stats">
+      <div class="edet-stat"><div class="edet-stat-num" id="ldet-entries">0</div><div class="edet-stat-lbl">รายการ</div></div>
+      <div class="edet-stat"><div class="edet-stat-num" id="ldet-days">0</div><div class="edet-stat-lbl">วันงาน</div></div>
+      <div class="edet-stat"><div class="edet-stat-num" id="ldet-cost">0</div><div class="edet-stat-lbl">ต้นทุน (฿)</div></div>
+    </div>
+  </div>
+  <div class="edet-month-nav">
+    <button class="dn-btn" onclick="ldetShiftMonth(-1)">‹</button>
+    <div class="edet-month-center" id="ldet-month-label"></div>
+    <button class="dn-btn" onclick="ldetShiftMonth(1)">›</button>
+  </div>
+  <div class="edet-actions">
+    <button class="edet-action-btn print" onclick="window.print()">🖨 พิมพ์ / PDF</button>
+    <button class="edet-action-btn" onclick="ldetCopy()" style="background:var(--tll);border-color:var(--tl);color:var(--tld)">📋 คัดลอกข้อความ</button>
+  </div>
+  <div class="edet-body" id="ldet-body"></div>
+</div>
+
+
+<!-- SUCCESS / LOADING -->
+<div class="sov" id="sov"><div class="sc"><div class="si">✓</div><div class="st" id="s-title">บันทึกสำเร็จ!</div><div class="ss" id="s-msg"></div><button class="sok" onclick="closeSov()">ตกลง</button></div></div>
+<div class="lov" id="lov"><div class="sp"></div><div class="lt" id="lt">กำลังบันทึก...</div></div>
+
+<!-- ============================================================
+     Application scripts — load order matters
+     1. config.js   — declares MD, caches, CFG, runtime state
+     2. utils.js    — date/string helpers (used by everything)
+     3. storage.js  — localStorage load/save
+     4. api.js      — sendAPI, login, sync status
+     5. ui.js       — modals, toasts, combo box, navigation
+     6. master.js   — master data CRUD
+     7. logs.js     — log entries (employee / outsource / bulk / edit)
+     8. dashboard.js — today / monthly / day detail
+     9. details.js  — employee / truck / location detail screens
+    10. backup.js   — data export / import
+    11. app.js      — boot
+============================================================ -->
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/master.js"></script>
+<script src="js/logs.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/details.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
