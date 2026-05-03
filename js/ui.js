@@ -29,6 +29,30 @@ function logWage(log){
   return log.duration==='ครึ่งวัน'?task.dailyRate*0.5:task.dailyRate;
 }
 
+// ===== CALENDAR GRID BUILDER =====
+// Shared by dashboard (renderMonth) and details (renderEdet, renderLdet).
+// cellFn(dayNum|null, iso|null, isToday, isFuture) → cell HTML string
+function buildCalGrid(y,m,cellFn){
+  const hd=['จ','อ','พ','พฤ','ศ','ส','อา'];
+  const fd=new Date(y,m,1).getDay();
+  const off=fd===0?6:fd-1;
+  const dim=new Date(y,m+1,0).getDate();
+  const rows=Math.ceil((off+dim)/7);
+  const todayIso=isoDate(new Date());
+  const now=new Date();now.setHours(0,0,0,0);
+  const head=hd.map(d=>'<div class="cal-head-cell">'+d+'</div>').join('');
+  let cells='';
+  for(let c=0;c<rows*7;c++){
+    const dn=c-off+1;
+    const valid=dn>=1&&dn<=dim;
+    if(!valid){cells+=cellFn(null,null,false,false);continue;}
+    const d=new Date(y,m,dn);
+    const iso=isoDate(d);
+    cells+=cellFn(dn,iso,iso===todayIso,d>now);
+  }
+  return {head,cells};
+}
+
 function oCombo(inp,drop,type){renderDrop(inp,drop,type,'');document.getElementById(drop).classList.add('open');}
 function fCombo(inp,drop,type){renderDrop(inp,drop,type,document.getElementById(inp).value);document.getElementById(drop).classList.add('open');}
 function renderDrop(inp,drop,type,q){

@@ -213,6 +213,7 @@
     <div class="tab" id="tab-locations" onclick="switchTab('locations')">แปลง</div>
     <div class="tab" id="tab-tasks" onclick="switchTab('tasks')">งาน</div>
     <div class="tab" id="tab-contractors" onclick="switchTab('contractors')">ผู้รับเหมา</div>
+    <div class="tab" id="tab-fertilizers" onclick="switchTab('fertilizers')">ปุ๋ย</div>
   </div>
   <div class="mbody">
     <div id="panel-employees"><button class="add-btn" onclick="openEmpMod()">+ เพิ่มพนักงานใหม่</button><div id="emp-list"></div></div>
@@ -220,6 +221,7 @@
     <div id="panel-locations" style="display:none"><button class="add-btn" style="background:var(--tl)" onclick="openLocMod()">+ เพิ่มแปลงใหม่</button><div id="loc-list"></div></div>
     <div id="panel-tasks" style="display:none"><button class="add-btn" style="background:var(--pu)" onclick="openTaskMod()">+ เพิ่มงานใหม่</button><div id="task-list"></div></div>
     <div id="panel-contractors" style="display:none"><button class="add-btn" style="background:var(--am)" onclick="openContractorMod()">+ เพิ่มผู้รับเหมาใหม่</button><div id="contractor-list"></div></div>
+    <div id="panel-fertilizers" style="display:none"><button class="add-btn" style="background:#558b2f" onclick="openFertilizerMod()">+ เพิ่มปุ๋ยใหม่</button><div id="fertilizer-list"></div></div>
   </div>
 </div>
 
@@ -316,7 +318,15 @@
   <div class="modal">
     <div class="mtitle" id="mod-truck-t">เพิ่มทะเบียนรถใหม่</div>
     <div class="mf"><label class="ml">ทะเบียนรถ</label><input type="text" id="mt-plate" class="mi2" placeholder="เช่น กข 1234 กรุงเทพฯ" style="text-transform:uppercase"></div>
-    <div class="mf"><label class="ml">ประเภทรถ <span class="opt">(ถ้ามี)</span></label><input type="text" id="mt-type" class="mi2" placeholder="เช่น รถสิบล้อ, รถหกล้อ"></div>
+    <div class="mr2">
+      <div class="mf"><label class="ml">ประเภทรถ <span class="opt">(ถ้ามี)</span></label><input type="text" id="mt-type" class="mi2" placeholder="เช่น รถสิบล้อ, รถหกล้อ"></div>
+      <div class="mf"><label class="ml">ยี่ห้อ/รุ่น <span class="opt">(ถ้ามี)</span></label><input type="text" id="mt-model" class="mi2" placeholder="เช่น ISUZU FTR, HINO 300"></div>
+    </div>
+    <div class="mr2">
+      <div class="mf"><label class="ml">ปีรถ พ.ศ. <span class="opt">(ถ้ามี)</span></label><input type="number" id="mt-year" class="mi2" placeholder="เช่น 2562" inputmode="numeric"></div>
+      <div class="mf"><label class="ml">คนขับประจำ <span class="opt">(ถ้ามี)</span></label><input type="text" id="mt-driver" class="mi2" placeholder="ชื่อคนขับประจำ"></div>
+    </div>
+    <div class="mf"><label class="ml">ภาษีรถหมดอายุ <span class="opt">(ถ้ามี — แจ้งเตือนเมื่อใกล้หมด)</span></label><input type="date" id="mt-tax" class="mi2"></div>
     <div class="mf"><label class="ml">หมายเหตุ <span class="opt">(ถ้ามี)</span></label><input type="text" id="mt-note" class="mi2" placeholder="ข้อมูลเพิ่มเติม..."></div>
     <div class="mac"><button class="mc" onclick="closeMod('mod-truck')">ยกเลิก</button><button class="ms am" onclick="saveTruck()">บันทึก</button></div>
   </div>
@@ -356,6 +366,32 @@
     <div class="mf"><label class="ml">งานที่รับ <span class="opt">(ถ้ามี)</span></label><input type="text" id="mc-specialty" class="mi2" placeholder="เช่น รับเหมาตัด-โหลด-ส่ง"></div>
     <div class="mf"><label class="ml">หมายเหตุ <span class="opt">(ถ้ามี)</span></label><input type="text" id="mc-note" class="mi2" placeholder="ข้อมูลเพิ่มเติม..."></div>
     <div class="mac"><button class="mc" onclick="closeMod('mod-contractor')">ยกเลิก</button><button class="ms" style="background:var(--am)" onclick="saveContractor()">บันทึก</button></div>
+  </div>
+</div>
+
+<!-- MODAL FERTILIZER -->
+<div class="mbk" id="mod-fertilizer">
+  <div class="modal">
+    <div class="mtitle" id="mod-fertilizer-t">เพิ่มปุ๋ยใหม่</div>
+    <div class="mr2">
+      <div class="mf"><label class="ml">ชื่อปุ๋ย / ยี่ห้อ</label><input type="text" id="mfz-name" class="mi2" placeholder="เช่น ยูเรีย, สูตร 15-15-15 ตรานก"></div>
+      <div class="mf"><label class="ml">สูตร NPK <span class="opt">(ถ้ามี)</span></label><input type="text" id="mfz-formula" class="mi2" placeholder="เช่น 46-0-0, 15-15-15"></div>
+    </div>
+    <div class="mr2">
+      <div class="mf"><label class="ml">ประเภทปุ๋ย</label>
+        <select id="mfz-type" class="mi2">
+          <option value="">— เลือก —</option>
+          <option>ปุ๋ยเคมี</option><option>ปุ๋ยอินทรีย์</option><option>ปุ๋ยชีวภาพ</option><option>ปุ๋ยน้ำ</option><option>อื่นๆ</option>
+        </select>
+      </div>
+      <div class="mf"><label class="ml">หน่วย <span class="opt">(ถ้ามี)</span></label><input type="text" id="mfz-unit" class="mi2" placeholder="เช่น กก., ลิตร, กระสอบ"></div>
+    </div>
+    <div class="mr2">
+      <div class="mf"><label class="ml">ราคาต่อหน่วย (฿) <span class="opt">(ถ้ามี)</span></label><input type="number" id="mfz-price" class="mi2" placeholder="เช่น 750" inputmode="decimal" step="0.01"></div>
+      <div class="mf"><label class="ml">ร้าน / ผู้จำหน่าย <span class="opt">(ถ้ามี)</span></label><input type="text" id="mfz-supplier" class="mi2" placeholder="เช่น ร้านเกษตรใจดี"></div>
+    </div>
+    <div class="mf"><label class="ml">หมายเหตุ <span class="opt">(ถ้ามี)</span></label><input type="text" id="mfz-note" class="mi2" placeholder="ข้อมูลเพิ่มเติม..."></div>
+    <div class="mac"><button class="mc" onclick="closeMod('mod-fertilizer')">ยกเลิก</button><button class="ms" style="background:#558b2f" onclick="saveFertilizer()">บันทึก</button></div>
   </div>
 </div>
 

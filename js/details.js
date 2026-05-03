@@ -23,7 +23,6 @@ function renderEdet(){
   if(!emp){alert('ไม่พบพนักงาน');go('screen-dash');return;}
   const nm=empFull(emp);
   const {y,m}=edetMonth;
-  const todayD=new Date();todayD.setHours(0,0,0,0);
   const daysInMonth=new Date(y,m+1,0).getDate();
   let full=0,half=0;
   const dayLogs={};
@@ -56,40 +55,28 @@ function renderEdet(){
     wageBox.style.display='flex';
   } else wageBox.style.display='none';
 
-  const firstDay=new Date(y,m,1).getDay();
-  const startOffset=(firstDay===0?6:firstDay-1);
-  const totalCells=startOffset+daysInMonth;
-  const rows=Math.ceil(totalCells/7);
-  let html='<div style="background:#fff;border:1.5px solid var(--bd);border-radius:12px;overflow:hidden">';
-  html+='<div class="edet-cal-head">'+['จ','อ','พ','พฤ','ศ','ส','อา'].map(d=>'<div class="cal-head-cell">'+d+'</div>').join('')+'</div>';
-  html+='<div class="edet-cal-grid">';
-  for(let cell=0;cell<rows*7;cell++){
-    const dayNum=cell-startOffset+1;
-    const valid=dayNum>=1&&dayNum<=daysInMonth;
-    if(!valid){html+='<div class="edet-cell" style="background:#fafafa"></div>';continue;}
-    const d=new Date(y,m,dayNum);
-    const iso=isoDate(d);
-    const isToday=iso===isoDate(todayD);
-    const isFuture=d>todayD;
-    const dlogs=dayLogs[dayNum]||[];
-    let cellClass='edet-cell';
-    let marker='';
+  const {head:edetHead,cells:edetCells}=buildCalGrid(y,m,(dn,iso,isToday,isFuture)=>{
+    if(!dn)return '<div class="edet-cell" style="background:#fafafa"></div>';
+    const dlogs=dayLogs[dn]||[];
+    let cls='edet-cell',marker='';
     if(dlogs.length>0){
       const dayEq=dlogs.reduce((s,l)=>s+(l.duration==='ครึ่งวัน'?0.5:1),0);
       if(dlogs.length===1){
         const log=dlogs[0];
-        if(log.duration==='ครึ่งวัน'){cellClass+=' half';marker='<div class="edet-marker half">½</div>';}
-        else{cellClass+=' full';marker='<div class="edet-marker full">✓</div>';}
+        if(log.duration==='ครึ่งวัน'){cls+=' half';marker='<div class="edet-marker half">½</div>';}
+        else{cls+=' full';marker='<div class="edet-marker full">✓</div>';}
       } else {
-        cellClass+=' full';
+        cls+=' full';
         marker='<div class="edet-marker full" style="font-size:9px">'+dlogs.length+' งาน</div><div class="edet-marker full" style="font-size:9px">'+dayEq+' วัน</div>';
       }
-    } else if(!isFuture){cellClass+=' miss';marker='<div class="edet-marker miss">×</div>';}
-    if(!isFuture)cellClass+=' clickable';
+    } else if(!isFuture){cls+=' miss';marker='<div class="edet-marker miss">×</div>';}
+    if(!isFuture)cls+=' clickable';
     const click=!isFuture?'onclick="openDDS(\''+iso+'\')"':'';
-    html+='<div class="'+cellClass+'" '+click+'><div class="edet-num'+(isToday?' today':'')+'">'+dayNum+'</div>'+marker+'</div>';
-  }
-  html+='</div></div>';
+    return '<div class="'+cls+'" '+click+'><div class="edet-num'+(isToday?' today':'')+'">'+dn+'</div>'+marker+'</div>';
+  });
+  let html='<div style="background:#fff;border:1.5px solid var(--bd);border-radius:12px;overflow:hidden">'+
+    '<div class="edet-cal-head">'+edetHead+'</div>'+
+    '<div class="edet-cal-grid">'+edetCells+'</div></div>';
 
   if(tasksList.length>0){
     html+='<div style="font-size:12px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin:18px 0 9px">รายละเอียดงาน '+tasksList.length+' รายการ</div>';
@@ -284,8 +271,6 @@ function renderLdet(){
   const loc=MD.locations.find(l=>l.id===ldetLocId);
   if(!loc){alert('ไม่พบแปลง');go('screen-master');return;}
   const {y,m}=ldetMonth;
-  const todayD=new Date();todayD.setHours(0,0,0,0);
-  const daysInMonth=new Date(y,m+1,0).getDate();
   const acts=buildLocActivity(loc.name,y,m);
   const totalEntries=acts.length;
   const totalDay=acts.reduce((s,a)=>s+a.dayEq,0);
@@ -298,10 +283,6 @@ function renderLdet(){
   document.getElementById('ldet-days').textContent=totalDay;
   document.getElementById('ldet-cost').textContent=totalCost.toLocaleString('en-US',{maximumFractionDigits:0});
   document.getElementById('ldet-month-label').textContent=MO[m]+' '+(y+543);
-  const firstDay=new Date(y,m,1).getDay();
-  const startOffset=(firstDay===0?6:firstDay-1);
-  const totalCells=startOffset+daysInMonth;
-  const rows=Math.ceil(totalCells/7);
   const byDay={};
   acts.forEach(a=>{if(!byDay[a.day])byDay[a.day]={emp:0,os:0};if(a.type==='employee')byDay[a.day].emp++; else byDay[a.day].os++;});
 
@@ -323,16 +304,9 @@ function renderLdet(){
       '</div>';
   }
 
-  html+='<div style="background:#fff;border:1.5px solid var(--bd);border-radius:12px;overflow:hidden">';
-  html+='<div class="edet-cal-head">'+['จ','อ','พ','พฤ','ศ','ส','อา'].map(d=>'<div class="cal-head-cell">'+d+'</div>').join('')+'</div>';
-  html+='<div class="edet-cal-grid">';
-  for(let cell=0;cell<rows*7;cell++){
-    const dayNum=cell-startOffset+1;
-    const valid=dayNum>=1&&dayNum<=daysInMonth;
-    if(!valid){html+='<div class="edet-cell" style="background:#fafafa"></div>';continue;}
-    const d=new Date(y,m,dayNum);
-    const isToday=isoDate(d)===isoDate(todayD);
-    const day=byDay[dayNum];
+  const {head:ldetHead,cells:ldetCells}=buildCalGrid(y,m,(dn,iso,isToday)=>{
+    if(!dn)return '<div class="edet-cell" style="background:#fafafa"></div>';
+    const day=byDay[dn];
     let cls='edet-cell',marker='';
     if(day){
       cls+=' full';
@@ -341,9 +315,11 @@ function renderLdet(){
       if(day.os>0)parts.push('<span style="color:var(--ad);font-weight:700">'+day.os+'</span>');
       marker='<div class="edet-marker" style="font-size:11px">'+parts.join('+')+'</div>';
     }
-    html+='<div class="'+cls+'"><div class="edet-num'+(isToday?' today':'')+'">'+dayNum+'</div>'+marker+'</div>';
-  }
-  html+='</div></div>';
+    return '<div class="'+cls+'"><div class="edet-num'+(isToday?' today':'')+'">'+dn+'</div>'+marker+'</div>';
+  });
+  html+='<div style="background:#fff;border:1.5px solid var(--bd);border-radius:12px;overflow:hidden">'+
+    '<div class="edet-cal-head">'+ldetHead+'</div>'+
+    '<div class="edet-cal-grid">'+ldetCells+'</div></div>';
   html+='<div style="display:flex;gap:14px;font-size:12px;color:var(--mu);margin-top:10px;align-items:center;justify-content:center">'+
     '<span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--g)"></span> พนักงาน '+empCount+'</span>'+
     '<span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--am)"></span> เหมา '+osCount+'</span></div>';

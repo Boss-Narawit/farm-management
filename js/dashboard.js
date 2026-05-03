@@ -113,12 +113,12 @@ async function confirmQL(){
   const task=document.getElementById('ql-task').value.trim();
   if(!task){document.getElementById('ql-task').focus();document.getElementById('ql-task').style.borderColor='var(--rd)';return;}
   document.getElementById('ql-task').style.borderColor='';
-  const payload={action:'addEmployee',date:qlDateIso,name:qlEmpName,task,duration:qlDur,note:'',loggedBy:user.displayName,timestamp:new Date().toISOString()};
+  const id=Date.now().toString()+Math.random().toString(36).slice(2,6);
+  const payload={action:'addEmployee',id,date:qlDateIso,name:qlEmpName,task,duration:qlDur,note:'',loggedBy:user.displayName,timestamp:new Date().toISOString()};
   closeQL();
   await sendAPI(payload,`บันทึก ${qlEmpName} สำเร็จ`,()=>{
     if(!logsCache[qlDateIso])logsCache[qlDateIso]=[];
-    const rec={id:Date.now().toString()+Math.random().toString(36).slice(2,6),name:qlEmpName,task,duration:qlDur,location:'',note:'',loggedBy:user.displayName,syncStatus:'pending'};
-    logsCache[qlDateIso].push(rec);
+    logsCache[qlDateIso].push({id,name:qlEmpName,task,duration:qlDur,location:'',note:'',loggedBy:user.displayName,syncStatus:'pending'});
     saveLogs();
     // Remember last-used for quick fill next time (same date)
     localStorage.setItem('fm_lastQLTask',task);
@@ -192,50 +192,26 @@ function renderMonth(){
   // calendar
   html+=`<div style="font-size:12px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">ปฏิทินการทำงาน</div>`;
 
-  // build calendar grid
-  const firstDay=new Date(y,m,1).getDay(); // 0=Sun
-  const startOffset=(firstDay===0?6:firstDay-1); // Mon-based offset
-  const totalCells=startOffset+daysInMonth;
-  const rows=Math.ceil(totalCells/7);
-
-  html+=`<div class="cal-wrap">
-    <div class="cal-head">
-      ${['จ','อ','พ','พฤ','ศ','ส','อา'].map(d=>`<div class="cal-head-cell">${d}</div>`).join('')}
-    </div>
-    <div class="cal-grid">`;
-
-  for(let cell=0;cell<rows*7;cell++){
-    const dayNum=cell-startOffset+1;
-    const valid=dayNum>=1&&dayNum<=daysInMonth;
-    const d=valid?new Date(y,m,dayNum):null;
-    const iso=valid?isoDate(d):'';
-    const isToday=valid&&iso===isoDate(todayD);
-    const isFuture=valid&&d>todayD;
-    const dayLogs=valid?logsCache[iso]||[]:[];
+  const totalEmp=emps.length;
+  const {head,cells}=buildCalGrid(y,m,(dn,iso,isToday,isFuture)=>{
+    if(!dn)return '<div class="cal-cell" style="background:#fafafa"></div>';
+    const dayLogs=logsCache[iso]||[];
     const loggedNames=new Set(dayLogs.map(l=>l.name));
-    const totalEmp=emps.length;
     const loggedCount=emps.filter(e=>loggedNames.has(empFull(e))).length;
     const missingCount=totalEmp-loggedCount;
-
-    if(!valid){html+=`<div class="cal-cell" style="background:#fafafa"></div>`;continue;}
-
-    // dots: green=logged, orange=half-day, red=missing (up to 3 shown)
     let dots='';
     if(!isFuture&&totalEmp>0){
-      const fullDots=Math.min(loggedCount,3);
-      const missDots=Math.min(missingCount,3-fullDots);
-      for(let i=0;i<fullDots;i++)dots+=`<div class="cdot full"></div>`;
-      for(let i=0;i<missDots;i++)dots+=`<div class="cdot miss"></div>`;
-      if(loggedCount+missingCount>3)dots+=`<div style="font-size:9px;color:var(--mu)">+</div>`;
+      const fd=Math.min(loggedCount,3);
+      const md=Math.min(missingCount,3-fd);
+      for(let i=0;i<fd;i++)dots+='<div class="cdot full"></div>';
+      for(let i=0;i<md;i++)dots+='<div class="cdot miss"></div>';
+      if(loggedCount+missingCount>3)dots+='<div style="font-size:9px;color:var(--mu)">+</div>';
     }
-
-    html+=`<div class="cal-cell${!isFuture?' clickable':''}" ${!isFuture?`onclick="openDDS('${iso}')"`:''}>
-      <div class="cal-num${isToday?' today':''}${dayNum<1||dayNum>daysInMonth?' other-month':''}">${dayNum}</div>
-      <div class="cal-dots">${dots}</div>
-    </div>`;
-  }
-
-  html+=`</div></div>`;
+    return '<div class="cal-cell'+(!isFuture?' clickable':'')+'"'+(!isFuture?' onclick="openDDS(\''+iso+'\')"':'')+'>'+
+      '<div class="cal-num'+(isToday?' today':'')+'">'+dn+'</div>'+
+      '<div class="cal-dots">'+dots+'</div></div>';
+  });
+  html+='<div class="cal-wrap"><div class="cal-head">'+head+'</div><div class="cal-grid">'+cells+'</div></div>';
 
   // legend
   html+=`<div style="display:flex;gap:14px;font-size:12px;color:var(--mu);margin-top:10px;align-items:center;justify-content:center">

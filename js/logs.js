@@ -11,10 +11,10 @@ async function submitEmp(){
   clearE('emp-err');
   const date=document.getElementById('emp-date').value,name=document.getElementById('emp-name').value.trim(),task=document.getElementById('emp-task').value.trim(),loc=document.getElementById('emp-loc').value.trim(),note=document.getElementById('emp-note').value.trim();
   if(!date||!name||!task){showE('emp-err','กรุณากรอก: วันที่, ชื่อพนักงาน และงานที่ทำ');return;}
-  await sendAPI({action:'addEmployee',date,name,task,location:loc,duration:formDur,note,loggedBy:user.displayName,timestamp:new Date().toISOString()},`บันทึก ${name} สำเร็จ`,()=>{
+  const id=Date.now().toString()+Math.random().toString(36).slice(2,6);
+  await sendAPI({action:'addEmployee',id,date,name,task,location:loc,duration:formDur,note,loggedBy:user.displayName,timestamp:new Date().toISOString()},`บันทึก ${name} สำเร็จ`,()=>{
     if(!logsCache[date])logsCache[date]=[];
-    const rec={id:Date.now().toString()+Math.random().toString(36).slice(2,6),name,task,location:loc,duration:formDur,note,loggedBy:user.displayName,syncStatus:'pending'};
-    logsCache[date].push(rec);
+    logsCache[date].push({id,name,task,location:loc,duration:formDur,note,loggedBy:user.displayName,syncStatus:'pending'});
     saveLogs();
     document.getElementById('emp-name').value='';document.getElementById('emp-task').value='';document.getElementById('emp-loc').value='';document.getElementById('emp-note').value='';setDur('เต็มวัน');
   });
@@ -26,9 +26,10 @@ async function submitTruck(){
   clearE('truck-err');
   const date=document.getElementById('truck-date').value,plate=document.getElementById('truck-plate').value.trim().toUpperCase(),weight=document.getElementById('truck-weight').value,driver=document.getElementById('truck-driver').value.trim(),note=document.getElementById('truck-note').value.trim();
   if(!date||!plate||!weight){showE('truck-err','กรุณากรอก: วันที่, ทะเบียนรถ และน้ำหนัก');return;}
-  await sendAPI({action:'addTruck',date,plate,weight,driver,note,loggedBy:user.displayName,timestamp:new Date().toISOString()},`บันทึกรถ ${plate} สำเร็จ`,()=>{
+  const id=Date.now().toString()+Math.random().toString(36).slice(2,6);
+  await sendAPI({action:'addTruck',id,date,plate,weight,driver,note,loggedBy:user.displayName,timestamp:new Date().toISOString()},`บันทึกรถ ${plate} สำเร็จ`,()=>{
     if(!truckLogsCache[date])truckLogsCache[date]=[];
-    truckLogsCache[date].push({id:Date.now().toString()+Math.random().toString(36).slice(2,6),plate,weight:parseFloat(weight),driver,note,loggedBy:user.displayName,ts:new Date().toISOString()});
+    truckLogsCache[date].push({id,plate,weight:parseFloat(weight),driver,note,loggedBy:user.displayName,ts:new Date().toISOString(),syncStatus:'pending'});
     saveLogs();
     document.getElementById('truck-plate').value='';document.getElementById('truck-weight').value='';document.getElementById('truck-driver').value='';document.getElementById('truck-note').value='';
   });
@@ -245,13 +246,15 @@ async function submitBulk(){
   const selectedEmps=MD.employees.filter(e=>bulkSelected.has(e.id));
   const names=selectedEmps.map(e=>empFull(e));
   if(!logsCache[date])logsCache[date]=[];
+  const ids=[];
   selectedEmps.forEach(e=>{
     const nm=empFull(e);
-    const rec={id:Date.now().toString()+Math.random().toString(36).slice(2,6),name:nm,task,location:loc,duration:bulkDur,note:'',loggedBy:user.displayName,syncStatus:'pending'};
-    logsCache[date].push(rec);
+    const id=Date.now().toString()+Math.random().toString(36).slice(2,6);
+    ids.push(id);
+    logsCache[date].push({id,name:nm,task,location:loc,duration:bulkDur,note:'',loggedBy:user.displayName,syncStatus:'pending'});
   });
   saveLogs();
-  await sendAPI({action:'addEmployeeBulk',date,names,task,location:loc,duration:bulkDur,loggedBy:user.displayName,timestamp:new Date().toISOString()},
+  await sendAPI({action:'addEmployeeBulk',date,ids,names,task,location:loc,duration:bulkDur,loggedBy:user.displayName,timestamp:new Date().toISOString()},
     'บันทึก '+names.length+' คนสำเร็จ',()=>{
       bulkSelected=new Set();
       document.getElementById('bulk-task').value='';

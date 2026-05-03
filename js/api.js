@@ -39,26 +39,20 @@ function logout(){if(!confirm('ออกจากระบบ?'))return;sessionS
 
 // ===== SYNC STATUS =====
 function markSyncStatus(payload,status){
-  // payload may have action: addEmployee/addOutsource/addEmployeeBulk/addTruck
-  // Find the matching log by date+id and update its syncStatus
+  // Match the exact record by id — never stamp all-pending on a date
   if(!payload||!payload.date)return;
   const date=payload.date;
-  if(payload.action==='addEmployee' || payload.action==='editEmployee' || payload.action==='deleteEmployee'){
-    if(!logsCache[date])return;
-    // For add, find by name+task+ts (roughly). For simplicity, mark all 'pending' as 'status'
-    logsCache[date].forEach(l=>{if(l.syncStatus==='pending')l.syncStatus=status;});
-  } else if(payload.action==='addEmployeeBulk' && payload.names){
-    if(!logsCache[date])return;
-    payload.names.forEach(nm=>{
-      const log=logsCache[date].find(l=>l.name===nm && l.syncStatus==='pending');
-      if(log)log.syncStatus=status;
-    });
-  } else if(payload.action==='addOutsource' || payload.action==='editOutsource' || payload.action==='deleteOutsource'){
-    if(!outsourceLogsCache[date])return;
-    outsourceLogsCache[date].forEach(o=>{if(o.syncStatus==='pending')o.syncStatus=status;});
+  if(payload.action==='addEmployee'||payload.action==='editEmployee'||payload.action==='deleteEmployee'){
+    const log=(logsCache[date]||[]).find(l=>l.id===payload.id||l.id===payload.logId);
+    if(log)log.syncStatus=status;
+  } else if(payload.action==='addEmployeeBulk'&&payload.ids){
+    (logsCache[date]||[]).forEach(l=>{if(payload.ids.includes(l.id))l.syncStatus=status;});
+  } else if(payload.action==='addOutsource'||payload.action==='editOutsource'||payload.action==='deleteOutsource'){
+    const log=(outsourceLogsCache[date]||[]).find(o=>o.id===payload.id||o.id===payload.osId);
+    if(log)log.syncStatus=status;
   } else if(payload.action==='addTruck'){
-    if(!truckLogsCache[date])return;
-    truckLogsCache[date].forEach(t=>{if(t.syncStatus==='pending')t.syncStatus=status;});
+    const log=(truckLogsCache[date]||[]).find(t=>t.id===payload.id);
+    if(log)log.syncStatus=status;
   }
   saveLogs();
 }

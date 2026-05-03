@@ -22,7 +22,7 @@ let dashDay=new Date(); dashDay.setHours(0,0,0,0);
 let dashMonth={y:new Date().getFullYear(), m:new Date().getMonth()};
 let qlEmpName='', qlDateIso='';
 
-let MD={employees:[],trucks:[],locations:[],tasks:[],contractors:[]};
+let MD={employees:[],trucks:[],locations:[],tasks:[],contractors:[],fertilizers:[]};
 let logsCache={}; // employee logs
 let truckLogsCache={}; // truck trips
 let outsourceLogsCache={}; // outsource entries

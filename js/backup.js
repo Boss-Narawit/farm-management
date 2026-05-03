@@ -7,12 +7,13 @@
 // ===== BACKUP / RESTORE =====
 function exportBackup(){
   const data={
-    version:1,
+    version:2,
     exportedAt:new Date().toISOString(),
     masterData:MD,
     logs:logsCache,
     truckLogs:truckLogsCache,
-    outsourceLogs:outsourceLogsCache
+    outsourceLogs:outsourceLogsCache,
+    holidays:holidays
   };
   const json=JSON.stringify(data,null,2);
   const blob=new Blob([json],{type:'application/json'});
@@ -71,6 +72,7 @@ function importBackup(event){
         logsCache=data.logs||{};
         truckLogsCache=data.truckLogs||{};
         outsourceLogsCache=data.outsourceLogs||{};
+        holidays=data.holidays||{};
         saveMD();
         saveLogs();
         showOk('กู้คืนสำเร็จ!','โหลดข้อมูลใหม่แล้ว — กดตกลงเพื่อรีเฟรช');

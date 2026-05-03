@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 Read this first before any work on this project. It contains the project conventions, file map, gotchas, and verification commands. Following it will save tokens by skipping rediscovery.
 
 ## Project at a glance
@@ -12,30 +14,64 @@ Thai-language farm management web app for ~3-4 elderly (60+) sugarcane farm mana
 - Mobile WebView compatible (LINE in-app browser is the lowest target — 5 MB localStorage)
 - Works offline in demo mode; Google Sheets sync is optional
 
+## CRITICAL: File structure
+
+**JS files must be in `js/` subdirectory.** `index.html` loads `src="js/config.js"` etc. If files are found in the repo root instead of `js/`, the app will silently fail to load. Move them:
+
+```bash
+mkdir -p js && mv config.js utils.js storage.js api.js ui.js master.js logs.js dashboard.js details.js backup.js app.js js/
+```
+
 ## File map (read this before searching)
 
 ```
-index.html       # 556 lines — HTML skeleton + all screens + modals. No <script> or <style> blocks; everything imported.
-styles.css       # 355 lines — theme tokens (--g/--gd/--gl green, --am/--ad/--al orange/outsource, --tl/--tld/--tll teal/location, --pu/--pl purple/tasks), screens, modals, components, @media print
-js/config.js     # CFG object (LINE_CLIENT_ID, APPS_SCRIPT_URL), MD = {employees, trucks, locations, tasks, contractors}, logsCache, truckLogsCache, outsourceLogsCache, holidays, runtime state (user, formDur, qlDur, edit*Id, dashView)
-js/utils.js      # isoDate, parseISO, thaiDate, escHtml, escAttr, fallbackCopy, MO[] (Thai month names), DOW[]/DOW_S[] (Thai day names)
-js/storage.js    # loadMD/saveMD (key 'fm_md'), loadLogs/saveLogs (keys 'fm_logs', 'fm_tlogs', 'fm_oslogs', 'fm_holidays')
-js/api.js        # sendAPI (Google Sheets POST), loginLine/loginDemo/afterLogin/logout, markSyncStatus, syncDot
-js/ui.js         # go (screen nav), showOk, showLoad/hideLoad, showE/clearE, modal helpers (closeMod), combo box (oCombo/fCombo/dClose/renderDrop/selComboFromData), undo toast (showUndoToast), updateDD (date display)
-js/master.js     # CRUD for 5 master types — render*List, open*Mod, save*, del* for: employees, trucks, locations, tasks, contractors. Switch tab logic (switchTab).
-js/logs.js       # submitEmp/submitTruck/submitOutsource, openQL/confirmQL (quick log), bulk log (initBulkLog/submitBulk/toggleBulkEmp/setBulkDur), edit log modal (editLog/saveEditLog/deleteLog), edit OS modal (editOSLog/saveOSLog/deleteOSLog), toggleHoliday
-js/dashboard.js  # renderDash → renderToday/renderMonth, openDDS/closeDDS (day detail sheet), DDS row override at bottom for multi-job + holiday awareness
-js/details.js    # 3 mirror screens: openEmpDetail/renderEdet/edetCopy, openTruckDetail/renderTdet/tdetCopy, openLocDetail/renderLdet/ldetCopy. Helpers: computeSeasonSummary, locLastActivity, daysAgo, buildLocActivity (employee + outsource interleaved)
-js/backup.js     # exportBackup (downloads JSON), importBackup (validates schema, confirms, replaces, reloads)
-js/app.js        # Boot — DOMContentLoaded → loadMD, loadLogs, restore login from sessionStorage, OAuth callback handling
-google-apps-script.js  # Backend — deploy as Web App, paste URL into js/config.js → CFG.APPS_SCRIPT_URL
+index.html            # HTML skeleton + all screens + modals. No inline <script> or <style>; everything imported.
+styles.css            # Theme tokens, screens, modals, components, @media print
+js/config.js          # CFG object (LINE_CLIENT_ID, APPS_SCRIPT_URL), MD = {employees, trucks, locations, tasks, contractors},
+                      #   logsCache, truckLogsCache, outsourceLogsCache, holidays, runtime state (user, formDur, qlDur, edit*Id, dashView)
+js/utils.js           # isoDate, parseISO, thaiDate, escHtml, escAttr, setTodayForms, fallbackCopy,
+                      #   MO[] (Thai month names), DOW[]/DOW_S[] (Thai day names)
+js/storage.js         # loadMD/saveMD (key 'fm_md'), loadLogs/saveLogs (keys 'fm_logs', 'fm_tlogs', 'fm_oslogs', 'fm_holidays')
+js/api.js             # sendAPI (Google Sheets POST), loginLine/loginDemo/afterLogin/logout/checkLine, markSyncStatus, syncDot
+js/ui.js              # go (screen nav), showOk, showLoad/hideLoad, showE/clearE, modal helpers (closeMod),
+                      #   combo box (oCombo/fCombo/dClose/renderDrop/selComboFromData), undo toast (showUndoToast),
+                      #   updateDD (date display), logWage(), findTaskByName(), empFull(), empSub(), renderAll()
+js/master.js          # CRUD for 5 master types — render*List, open*Mod, save*, del* for:
+                      #   employees, trucks, locations, tasks, contractors. Switch tab logic (switchTab).
+js/logs.js            # submitEmp/submitTruck/submitOutsource, openQL/confirmQL/closeQL/setQLDur (quick log),
+                      #   bulk log (initBulkLog/submitBulk/toggleBulkEmp/setBulkDur/renderBulkGrid/toggleSelectAll/updateBulkCount),
+                      #   edit log modal (editLog/saveEditLog/deleteLog), edit OS modal (editOSLog/saveOSLog/deleteOSLog), toggleHoliday
+js/dashboard.js       # renderDash → renderToday/renderMonth, openDDS/closeDDS (day detail sheet),
+                      #   shiftDay/goToday (date nav), DDS row override for multi-job + holiday awareness
+js/details.js         # 3 mirror screens: openEmpDetail/renderEdet/edetCopy, openTruckDetail/renderTdet/tdetCopy,
+                      #   openLocDetail/renderLdet/ldetCopy. Helpers: computeSeasonSummary, locLastActivity, daysAgo, buildLocActivity
+js/backup.js          # exportBackup (downloads JSON), importBackup (validates schema, confirms, replaces, reloads)
+js/app.js             # Boot — window.onload → loadMD/loadLogs/setTodayForms/checkLine; global click listener closes open combos
+google-apps-script.js # TEMPLATE ONLY — not loaded by index.html. Copy code to Google Apps Script editor, deploy as Web App,
+                      #   paste URL into js/config.js → CFG.APPS_SCRIPT_URL
 ```
+
+**Script load order** (mirrors browser execution): config → utils → storage → api → ui → master → logs → dashboard → details → backup → app
+
+## Boot sequence
+
+`window.onload` in `app.js`:
+1. `loadMD()` + `loadLogs()` — populate `MD`, `logsCache`, `truckLogsCache`, `outsourceLogsCache`, `holidays`
+2. `setTodayForms()` — set all date fields (emp-date, truck-date, etc.) to today's ISO date
+3. `checkLine()` — handle OAuth callback; if user exists in sessionStorage, calls `afterLogin()`
+
+Demo mode activates automatically if `CFG.LINE_CLIENT_ID === 'YOUR_LINE_CLIENT_ID'` (the default) — both loginLine and loginDemo will silently start demo mode.
 
 ## Data model essentials
 
 **Every log has a unique `id`** — `Date.now()+Math.random().toString(36).slice(2,6)`. This was a real refactor: pre-multi-job, logs were keyed by name and one log/day was the limit. Now `findIndex(l=>l.name===nm)` is wrong; use `filter(l=>l.name===nm)` for "all matching".
 
-**Wage is per-task, not per-employee.** `MD.tasks[].dailyRate`. `logWage(log)` (defined in `details.js`) returns rate for full day, half rate for ครึ่งวัน, 0 if task missing/unpriced. **Always use `logWage()` — never recompute.**
+**Log structure:**
+- Employee: `logsCache[ISO_DATE] = [{id, name, task, location, duration, note, loggedBy, syncStatus}, ...]`
+- Truck: `truckLogsCache[ISO_DATE] = [{id, plate, weight, driver, note, loggedBy, ts, syncStatus}, ...]`
+- Outsource: `outsourceLogsCache[ISO_DATE] = [{id, location, task, contractor, fee, note, loggedBy, timestamp, syncStatus}, ...]`
+
+**Wage is per-task, not per-employee.** `MD.tasks[].dailyRate`. `logWage(log)` (defined in `ui.js`) returns rate for full day, half rate for ครึ่งวัน, 0 if task missing/unpriced. **Always use `logWage()` — never recompute.**
 
 **Employees have `status: 'active' | 'inactive'`.** Filter to active in dashboard/forms; show all (with inactive at bottom) in master list.
 
@@ -51,44 +87,46 @@ google-apps-script.js  # Backend — deploy as Web App, paste URL into js/config
 
 **Modals.** Pattern: `<div class="mbk" id="mod-X">` + `closeMod('mod-X')`. Open with `.classList.add('open')`. Forms inside use the `mr2`/`mf`/`ml`/`mi2` class system.
 
-**Combo boxes (autocomplete dropdowns).** Use `data-val` attribute + `selComboFromData(this, inp, drop)` — never escape quotes inside onmousedown handlers (we hit that bug twice).
+**Combo boxes (autocomplete dropdowns).** Use `data-val` attribute + `selComboFromData(this, inp, drop)` — never escape quotes inside onmousedown handlers (we hit that bug twice). Combo IDs are always fixed strings (e.g., `emp-nd`, `task-nd`) — don't make them dynamic.
 
 **Buddhist calendar.** Display year is `+543` (e.g., 2026 → 2569). `thaiDate()` handles this. ISO dates internally are Gregorian.
 
 **Two-tap delete confirm.** Pattern used in `deleteLog`/`deleteOSLog` — first tap turns button red with "⚠ กดอีกครั้งเพื่อยืนยันลบ", auto-resets after 5s. More reliable than `confirm()` on mobile WebViews.
 
-**Undo toast.** After delete operations, call `showUndoToast(message, undoFn)`. 7-second window. Already wired into employee + outsource log delete.
+**Undo toast.** After delete operations, call `showUndoToast(message, undoFn)`. 7-second window. Wired into employee log delete (`deleteLog`) and outsource log delete (`deleteOSLog`).
+
+**CSS theme tokens.** Green: `--g/--gd/--gl`. Orange/outsource: `--am/--ad/--al`. Teal/location: `--tl/--tld/--tll`. Purple/tasks: `--pu/--pl`. Neutral: `--bd` (border), `--mu` (muted), `--tx` (text), `--bg` (background), `--wh` (white). Status: `--rd/--rl` (red), `--bl/--bll` (blue).
 
 ## Gotchas (real bugs we hit)
 
 **Python escape parsing breaks string concatenation.** When generating JS via Python `replace`, `\\''+inp+\\''` becomes `''+inp+''` (empty strings). Always test with `node --check` after edits. Better: write JS to a separate file and inject it as raw text, never embed JS in Python triple-quoted strings.
 
-**File-wipe risk.** Failed Python edits have wiped the output `index.html` to 0 bytes. Always backup to `/tmp/work.html` before edits, verify syntax, then copy to outputs.
+**File-wipe risk.** Failed Python edits have wiped `index.html` to 0 bytes. Always backup before edits, verify syntax, then write output.
 
 **Surrogate emoji issue.** `\ud83c\udf3e` in Python strings throws UnicodeEncodeError when writing UTF-8. Use literal `🌾` or HTML entities `&#127806;`.
 
 **localStorage limits.** ~5 MB on iOS Safari/LINE WebView. ~1.5-2 years of data for a typical farm before issues. Once Google Sheets is wired up this stops mattering. Don't add storage management — user explicitly declined.
 
-**Truck functions are off-limits.** User wants to redesign them later. Don't edit submitTruck, openTruckDetail, renderTdet, etc. unless explicitly asked.
+**Truck functions are off-limits.** User wants to redesign them later. Don't edit `submitTruck`, `openTruckDetail`, `renderTdet`, etc. unless explicitly asked.
 
-**Child-safety/refusal context: not relevant here.** This is a farm management tool. Standard helpfulness applies.
+**Schema changes require backup/restore testing.** Users have existing JSON backup files. Any change to the data model must be backwards-compatible with `importBackup`.
 
 ## Verification commands
 
-After **any** code change, run these in order:
+After **any** code change, run these in order (paths are relative to repo root):
 
 ```bash
-# 1. Syntax check JS files individually
-for f in /mnt/user-data/outputs/farm-app/js/*.js; do node --check "$f" || echo "FAIL: $f"; done
+# 1. Syntax check all JS files
+for f in js/*.js; do node --check "$f" || echo "FAIL: $f"; done
 
 # 2. Cross-script integration test (most important)
-node /tmp/integration-test.js  # see template below
+node /tmp/integration-test.js
 
-# 3. If editing index.html, also check it renders
-grep -c "<script src=" /mnt/user-data/outputs/farm-app/index.html  # expect 11
+# 3. If editing index.html, verify script count
+grep -c "<script src=" index.html  # expect 11
 ```
 
-**Integration test template** — write this to `/tmp/integration-test.js` and run after major changes. Loads all scripts in a shared vm context (mirrors real browser script loading) and checks critical functions + key behaviors:
+**Integration test template** — write to `/tmp/integration-test.js`, run after major changes. Loads all scripts in a shared vm context (mirrors browser script loading):
 
 ```javascript
 const vm = require('vm');
@@ -109,7 +147,7 @@ const ctx = {
 vm.createContext(ctx);
 const order = ['config.js','utils.js','storage.js','api.js','ui.js','master.js','logs.js','dashboard.js','details.js','backup.js','app.js'];
 for (const f of order) {
-  vm.runInContext(fs.readFileSync(`/mnt/user-data/outputs/farm-app/js/${f}`,'utf8'), ctx, {filename:f});
+  vm.runInContext(fs.readFileSync(`js/${f}`,'utf8'), ctx, {filename:f});
 }
 vm.runInContext(`
   // Add specific behavioral checks here for the change you made.
@@ -146,17 +184,16 @@ vm.runInContext(`
 
 ## Communication style with the user
 
-- User prefers concise answers. Don't overexplain. Reach for short reply when an answer is short.
+- User prefers concise answers. Don't overexplain.
 - User is comfortable with technical concepts but not a developer. Show code blocks only when needed.
 - When suggesting features, **rank by real-world impact** not by ease of build.
 - When the user says "continue", they often mean "just keep building what you proposed" — don't re-ask.
-- Thai responses for user-facing UI explanations; English for code-internal discussion. Mixed is fine.
-- Ask clarifying questions via `ask_user_input_v0` when meaningful ambiguity exists. Don't ask about every minor decision.
+- Thai for user-facing UI explanations; English for code discussion. Mixed is fine.
 
 ## Out of scope
 
 - Don't suggest framework migrations (React/Vue/etc.) — adds complexity, breaks GitHub Pages flow
 - Don't suggest TypeScript — same reason
 - Don't suggest a build pipeline — user values "open file, it works"
-- Don't propose adding analytics, telemetry, or any third-party tracking
+- Don't propose analytics, telemetry, or third-party tracking
 - Don't refactor truck functions until user asks

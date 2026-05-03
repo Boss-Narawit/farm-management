@@ -5,8 +5,8 @@
  * ============================================================ */
 
 // ===== MASTER =====
-function switchTab(t){['employees','trucks','locations','tasks','contractors'].forEach(x=>{document.getElementById('tab-'+x).classList.toggle('active',x===t);document.getElementById('panel-'+x).style.display=x===t?'block':'none';});renderAll();}
-function renderAll(){renderEmpList();renderTruckList();renderLocList();if(typeof renderTaskList==='function')renderTaskList();if(typeof renderContractorList==='function')renderContractorList();}
+function switchTab(t){['employees','trucks','locations','tasks','contractors','fertilizers'].forEach(x=>{document.getElementById('tab-'+x).classList.toggle('active',x===t);document.getElementById('panel-'+x).style.display=x===t?'block':'none';});renderAll();}
+function renderAll(){renderEmpList();renderTruckList();renderLocList();if(typeof renderTaskList==='function')renderTaskList();if(typeof renderContractorList==='function')renderContractorList();if(typeof renderFertilizerList==='function')renderFertilizerList();}
 function renderEmpList(){
   const el=document.getElementById('emp-list');
   if(!MD.employees.length){el.innerHTML='<div class="es">ยังไม่มีรายชื่อพนักงาน<br>กดปุ่มด้านบนเพื่อเพิ่ม</div>';return;}
@@ -25,6 +25,7 @@ function renderEmpList(){
         '<div style="font-size:16px;font-weight:600">'+escHtml(empFull(e))+(inactive?' <span style="font-size:11px;background:#f3f4f6;color:var(--mu);padding:2px 7px;border-radius:10px;font-weight:600">ลาออก</span>':'')+'</div>'+
         '<div style="font-size:13px;color:var(--mu);margin-top:2px">'+escHtml(empSub(e))+'</div>'+
       '</div>'+
+      '<button onclick="event.stopPropagation();toggleEmpStatus(\''+e.id+'\')" style="background:'+(inactive?'var(--gl)':'#f3f4f6')+';color:'+(inactive?'var(--gd)':'var(--mu)')+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:Sarabun,sans-serif;margin-right:6px;white-space:nowrap">'+(inactive?'กลับมาทำงาน':'ลาออก')+'</button>'+
       '<button class="ddel" onclick="event.stopPropagation();delEmp(\''+e.id+'\')">&#10005;</button>'+
       '</div>';
   }).join('');
@@ -32,11 +33,27 @@ function renderEmpList(){
 function renderTruckList(){
   const el=document.getElementById('truck-list');
   if(!MD.trucks.length){el.innerHTML='<div class="es">ยังไม่มีทะเบียนรถ<br>กดปุ่มด้านบนเพื่อเพิ่ม</div>';return;}
-  el.innerHTML=MD.trucks.map(t=>`<div class="dc" style="cursor:pointer" onclick="openTruckDetail('${t.id}')">
-    <div class="dav" style="background:#fef3e2;font-size:22px">🚛</div>
-    <div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:600">${t.plate}</div><div style="font-size:13px;color:var(--mu);margin-top:2px">${[t.type,t.note].filter(Boolean).join(' · ')||'—'}</div></div>
-    <button class="ddel" onclick="event.stopPropagation();delTruck('${t.id}')">✕</button>
-  </div>`).join('');
+  const today=isoDate(new Date());
+  el.innerHTML=MD.trucks.map(t=>{
+    const sub=[t.type,t.model,t.year?'ปี '+t.year:'',t.driver?'คนขับ: '+t.driver:''].filter(Boolean).join(' · ')||'—';
+    let taxBadge='';
+    if(t.taxExpiry){
+      const daysLeft=Math.floor((new Date(t.taxExpiry+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
+      if(daysLeft<0)taxBadge='<div style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fef2f2;color:var(--rd);margin-top:4px;display:inline-block">&#9888; ภาษีหมดอายุ</div>';
+      else if(daysLeft<=30)taxBadge='<div style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fef2f2;color:var(--rd);margin-top:4px;display:inline-block">&#9888; ภาษีหมด '+daysLeft+' วัน</div>';
+      else if(daysLeft<=90)taxBadge='<div style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fef3e2;color:var(--ad);margin-top:4px;display:inline-block">&#128337; ภาษีหมด '+daysLeft+' วัน</div>';
+      else taxBadge='<div style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--gl);color:var(--gd);margin-top:4px;display:inline-block">&#10003; ภาษีถึง '+thaiDate(t.taxExpiry)+'</div>';
+    }
+    return '<div class="dc" style="cursor:pointer" onclick="openTruckDetail(\''+t.id+'\')">'+
+      '<div class="dav" style="background:#fef3e2;font-size:22px">&#128667;</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:16px;font-weight:600">'+escHtml(t.plate)+'</div>'+
+        '<div style="font-size:13px;color:var(--mu);margin-top:2px">'+escHtml(sub)+'</div>'+
+        taxBadge+
+      '</div>'+
+      '<button class="ddel" onclick="event.stopPropagation();delTruck(\''+t.id+'\')">&#10005;</button>'+
+      '</div>';
+  }).join('');
 }
 function openEmpMod(id){
   editEId=id||null;const m=id?MD.employees.find(e=>e.id===id):null;
@@ -47,7 +64,8 @@ function openEmpMod(id){
 }
 function saveEmp(){
   const first=document.getElementById('me-first').value.trim();if(!first){alert('กรุณาใส่ชื่อพนักงาน');return;}
-  const emp={id:editEId||Date.now().toString(),first,last:document.getElementById('me-last').value.trim(),birthYear:document.getElementById('me-year').value?parseInt(document.getElementById('me-year').value):null,nationality:document.getElementById('me-nat').value};
+  const existing=editEId?MD.employees.find(e=>e.id===editEId):null;
+  const emp={id:editEId||Date.now().toString(),first,last:document.getElementById('me-last').value.trim(),birthYear:document.getElementById('me-year').value?parseInt(document.getElementById('me-year').value):null,nationality:document.getElementById('me-nat').value,status:existing?(existing.status||'active'):'active'};
   if(editEId){const i=MD.employees.findIndex(e=>e.id===editEId);MD.employees[i]=emp;}else MD.employees.push(emp);
   saveMD();closeMod('mod-emp');renderEmpList();
 }
@@ -55,12 +73,19 @@ function delEmp(id){if(!confirm('ลบพนักงานนี้?'))return;
 function openTruckMod(id){
   editTId=id||null;const t=id?MD.trucks.find(x=>x.id===id):null;
   document.getElementById('mod-truck-t').textContent=t?'แก้ไขรถ':'เพิ่มทะเบียนรถใหม่';
-  document.getElementById('mt-plate').value=t?t.plate:'';document.getElementById('mt-type').value=t?t.type||'':'';document.getElementById('mt-note').value=t?t.note||'':'';
+  document.getElementById('mt-plate').value=t?t.plate:'';
+  document.getElementById('mt-type').value=t?t.type||'':'';
+  document.getElementById('mt-model').value=t?t.model||'':'';
+  document.getElementById('mt-year').value=t?t.year||'':'';
+  document.getElementById('mt-driver').value=t?t.driver||'':'';
+  document.getElementById('mt-tax').value=t?t.taxExpiry||'':'';
+  document.getElementById('mt-note').value=t?t.note||'':'';
   document.getElementById('mod-truck').classList.add('open');
 }
 function saveTruck(){
   const plate=document.getElementById('mt-plate').value.trim().toUpperCase();if(!plate){alert('กรุณาใส่ทะเบียนรถ');return;}
-  const truck={id:editTId||Date.now().toString(),plate,type:document.getElementById('mt-type').value.trim(),note:document.getElementById('mt-note').value.trim()};
+  const yearVal=document.getElementById('mt-year').value;
+  const truck={id:editTId||Date.now().toString(),plate,type:document.getElementById('mt-type').value.trim(),model:document.getElementById('mt-model').value.trim(),year:yearVal?parseInt(yearVal):null,driver:document.getElementById('mt-driver').value.trim(),taxExpiry:document.getElementById('mt-tax').value||null,note:document.getElementById('mt-note').value.trim()};
   if(editTId){const i=MD.trucks.findIndex(t=>t.id===editTId);MD.trucks[i]=truck;}else MD.trucks.push(truck);
   saveMD();closeMod('mod-truck');renderTruckList();
 }
@@ -285,4 +310,73 @@ function delContractor(id){
   if(!confirm('ลบผู้รับเหมานี้?'))return;
   MD.contractors=(MD.contractors||[]).filter(x=>x.id!==id);
   saveMD();renderContractorList();
+}
+
+function toggleEmpStatus(id){
+  const e=MD.employees.find(x=>x.id===id);if(!e)return;
+  e.status=(e.status||'active')==='active'?'inactive':'active';
+  saveMD();renderEmpList();
+}
+
+
+// ===== FERTILIZERS =====
+function renderFertilizerList(){
+  const el=document.getElementById('fertilizer-list');
+  if(!el)return;
+  if(!(MD.fertilizers||[]).length){el.innerHTML='<div class="es">ยังไม่มีรายการปุ๋ย<br>กดปุ่มด้านบนเพื่อเพิ่ม</div>';return;}
+  el.innerHTML=(MD.fertilizers||[]).map(f=>{
+    const sub=[f.type,f.unit?'หน่วย: '+f.unit:'',f.supplier?'ร้าน: '+f.supplier:''].filter(Boolean).join(' · ')||'—';
+    const formulaBadge=f.formula?'<span style="font-size:12px;font-weight:700;background:#f1f8e9;color:#558b2f;padding:2px 8px;border-radius:8px;margin-left:6px">'+escHtml(f.formula)+'</span>':'';
+    const priceBadge=f.pricePerUnit?'<span style="font-size:13px;font-weight:700;color:#558b2f;background:#f1f8e9;padding:2px 9px;border-radius:6px;margin-right:6px">'+f.pricePerUnit+'฿/'+escHtml(f.unit||'หน่วย')+'</span>':'';
+    return '<div class="dc" style="cursor:pointer" onclick="openFertilizerMod(\''+f.id+'\')">'+
+      '<div class="dav" style="background:#f1f8e9;font-size:21px">&#127793;</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:16px;font-weight:600">'+escHtml(f.name)+formulaBadge+'</div>'+
+        '<div style="font-size:13px;color:var(--mu);margin-top:2px">'+priceBadge+escHtml(sub)+'</div>'+
+        (f.note?'<div style="font-size:12px;color:var(--mu);margin-top:2px">&#128203; '+escHtml(f.note)+'</div>':'')+
+      '</div>'+
+      '<button class="ddel" onclick="event.stopPropagation();delFertilizer(\''+f.id+'\')">&#10005;</button>'+
+      '</div>';
+  }).join('');
+}
+
+let editFertilizerId=null;
+function openFertilizerMod(id){
+  editFertilizerId=id||null;
+  const f=id?(MD.fertilizers||[]).find(x=>x.id===id):null;
+  document.getElementById('mod-fertilizer-t').textContent=f?'แก้ไขปุ๋ย':'เพิ่มปุ๋ยใหม่';
+  document.getElementById('mfz-name').value=f?f.name:'';
+  document.getElementById('mfz-formula').value=f?f.formula||'':'';
+  document.getElementById('mfz-type').value=f?f.type||'':'';
+  document.getElementById('mfz-unit').value=f?f.unit||'':'';
+  document.getElementById('mfz-price').value=f?f.pricePerUnit||'':'';
+  document.getElementById('mfz-supplier').value=f?f.supplier||'':'';
+  document.getElementById('mfz-note').value=f?f.note||'':'';
+  document.getElementById('mod-fertilizer').classList.add('open');
+}
+
+function saveFertilizer(){
+  const name=document.getElementById('mfz-name').value.trim();
+  if(!name){alert('กรุณาใส่ชื่อปุ๋ย');return;}
+  const priceVal=document.getElementById('mfz-price').value;
+  const fert={
+    id:editFertilizerId||Date.now().toString(),
+    name,
+    formula:document.getElementById('mfz-formula').value.trim(),
+    type:document.getElementById('mfz-type').value,
+    unit:document.getElementById('mfz-unit').value.trim(),
+    pricePerUnit:priceVal?parseFloat(priceVal):null,
+    supplier:document.getElementById('mfz-supplier').value.trim(),
+    note:document.getElementById('mfz-note').value.trim()
+  };
+  if(!MD.fertilizers)MD.fertilizers=[];
+  if(editFertilizerId){const i=MD.fertilizers.findIndex(x=>x.id===editFertilizerId);MD.fertilizers[i]=fert;}
+  else MD.fertilizers.push(fert);
+  saveMD();closeMod('mod-fertilizer');renderFertilizerList();
+}
+
+function delFertilizer(id){
+  if(!confirm('ลบปุ๋ยนี้?'))return;
+  MD.fertilizers=(MD.fertilizers||[]).filter(x=>x.id!==id);
+  saveMD();renderFertilizerList();
 }
