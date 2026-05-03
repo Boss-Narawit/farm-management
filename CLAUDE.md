@@ -197,3 +197,18 @@ vm.runInContext(`
 - Don't suggest a build pipeline — user values "open file, it works"
 - Don't propose analytics, telemetry, or third-party tracking
 - Don't refactor truck functions until user asks
+
+# Coworker Delegation Protocol
+You are the lead developer. You have access to a fast, local CLI assistant named Gemini. Do not waste your context window on heavy-lifting, translation, repetitive typing, or generating boilerplate.
+
+When to delegate to Gemini:
+* Translating UI text from English to Thai.
+* Generating boilerplate HTML for new modals or screens.
+* Reformatting large arrays or JSON master data (like CFG objects).
+* Generating repetitive CSS variables.
+
+How to delegate:
+Execute this terminal command using single quotes around the prompt to avoid shell escaping issues: 
+`gemini 'Task: [Action]. Context: [Brief detail]. Output raw code only, no markdown formatting or explanations.'`
+
+After execution, read the terminal output and integrate the code directly into the relevant files. Never write the repetitive code yourself if Gemini can do it faster.
