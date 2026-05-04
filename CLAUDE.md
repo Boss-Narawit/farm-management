@@ -16,39 +16,40 @@ Thai-language farm management web app for ~3-4 elderly (60+) sugarcane farm mana
 
 ## CRITICAL: File structure
 
-**JS files must be in `js/` subdirectory.** `index.html` loads `src="js/config.js"` etc. If files are found in the repo root instead of `js/`, the app will silently fail to load. Move them:
+**JS files live in sub-folders of `js/`.** `index.html` loads from `js/core/`, `js/ui/`, and `js/features/`. Files in the wrong location cause silent load failures.
 
-```bash
-mkdir -p js && mv config.js utils.js storage.js api.js ui.js master.js logs.js dashboard.js details.js backup.js app.js js/
-```
+Sub-folder layout:
+- `js/core/` — config, utils, storage, api, app
+- `js/ui/` — ui
+- `js/features/` — master, logs, dashboard, details, backup
 
 ## File map (read this before searching)
 
 ```
-index.html            # HTML skeleton + all screens + modals. No inline <script> or <style>; everything imported.
-styles.css            # Theme tokens, screens, modals, components, @media print
-js/config.js          # CFG object (LINE_CLIENT_ID, APPS_SCRIPT_URL), MD = {employees, trucks, locations, tasks, contractors},
-                      #   logsCache, truckLogsCache, outsourceLogsCache, holidays, runtime state (user, formDur, qlDur, edit*Id, dashView)
-js/utils.js           # isoDate, parseISO, thaiDate, escHtml, escAttr, setTodayForms, fallbackCopy,
-                      #   MO[] (Thai month names), DOW[]/DOW_S[] (Thai day names)
-js/storage.js         # loadMD/saveMD (key 'fm_md'), loadLogs/saveLogs (keys 'fm_logs', 'fm_tlogs', 'fm_oslogs', 'fm_holidays')
-js/api.js             # sendAPI (Google Sheets POST), loginLine/loginDemo/afterLogin/logout/checkLine, markSyncStatus, syncDot
-js/ui.js              # go (screen nav), showOk, showLoad/hideLoad, showE/clearE, modal helpers (closeMod),
-                      #   combo box (oCombo/fCombo/dClose/renderDrop/selComboFromData), undo toast (showUndoToast),
-                      #   updateDD (date display), logWage(), findTaskByName(), empFull(), empSub(), renderAll()
-js/master.js          # CRUD for 5 master types — render*List, open*Mod, save*, del* for:
-                      #   employees, trucks, locations, tasks, contractors. Switch tab logic (switchTab).
-js/logs.js            # submitEmp/submitTruck/submitOutsource, openQL/confirmQL/closeQL/setQLDur (quick log),
-                      #   bulk log (initBulkLog/submitBulk/toggleBulkEmp/setBulkDur/renderBulkGrid/toggleSelectAll/updateBulkCount),
-                      #   edit log modal (editLog/saveEditLog/deleteLog), edit OS modal (editOSLog/saveOSLog/deleteOSLog), toggleHoliday
-js/dashboard.js       # renderDash → renderToday/renderMonth, openDDS/closeDDS (day detail sheet),
-                      #   shiftDay/goToday (date nav), DDS row override for multi-job + holiday awareness
-js/details.js         # 3 mirror screens: openEmpDetail/renderEdet/edetCopy, openTruckDetail/renderTdet/tdetCopy,
-                      #   openLocDetail/renderLdet/ldetCopy. Helpers: computeSeasonSummary, locLastActivity, daysAgo, buildLocActivity
-js/backup.js          # exportBackup (downloads JSON), importBackup (validates schema, confirms, replaces, reloads)
-js/app.js             # Boot — window.onload → loadMD/loadLogs/setTodayForms/checkLine; global click listener closes open combos
-google-apps-script.js # TEMPLATE ONLY — not loaded by index.html. Copy code to Google Apps Script editor, deploy as Web App,
-                      #   paste URL into js/config.js → CFG.APPS_SCRIPT_URL
+index.html              # HTML skeleton + all screens + modals. No inline <script> or <style>; everything imported.
+styles.css              # Theme tokens, screens, modals, components, @media print
+js/core/config.js       # CFG object (LINE_CLIENT_ID, APPS_SCRIPT_URL), MD = {employees, trucks, locations, tasks, contractors, fertilizers},
+                        #   logsCache, truckLogsCache, outsourceLogsCache, holidays, runtime state (user, formDur, qlDur, edit*Id, dashView)
+js/core/utils.js        # isoDate, parseISO, thaiDate, escHtml, escAttr, setTodayForms, fallbackCopy,
+                        #   MO[] (Thai month names), DOW[]/DOW_S[] (Thai day names)
+js/core/storage.js      # loadMD/saveMD (key 'fm_md'), loadLogs/saveLogs (keys 'fm_logs', 'fm_tlogs', 'fm_oslogs', 'fm_holidays')
+js/core/api.js          # sendAPI (Google Sheets POST), loginLine/loginDemo/afterLogin/logout/checkLine, markSyncStatus, syncDot
+js/core/app.js          # Boot — window.onload → loadMD/loadLogs/setTodayForms/checkLine; global click listener closes open combos
+js/ui/ui.js             # go (screen nav), showOk, showLoad/hideLoad, showE/clearE, modal helpers (closeMod),
+                        #   combo box (oCombo/fCombo/dClose/renderDrop/selComboFromData), undo toast (showUndoToast),
+                        #   updateDD (date display), logWage(), findTaskByName(), empFull(), empSub(), renderAll(), buildCalGrid()
+js/features/master.js   # CRUD for 6 master types — render*List, open*Mod, save*, del* for:
+                        #   employees, trucks, locations, tasks, contractors, fertilizers. Switch tab logic (switchTab).
+js/features/logs.js     # submitEmp/submitTruck/submitOutsource, openQL/confirmQL/closeQL/setQLDur (quick log),
+                        #   bulk log (initBulkLog/submitBulk/toggleBulkEmp/setBulkDur/renderBulkGrid/toggleSelectAll/updateBulkCount),
+                        #   edit log modal (editLog/saveEditLog/deleteLog), edit OS modal (editOSLog/saveOSLog/deleteOSLog), toggleHoliday
+js/features/dashboard.js # renderDash → renderToday/renderMonth, openDDS/closeDDS (day detail sheet),
+                          #   shiftDay/goToday (date nav), DDS row override for multi-job + holiday awareness
+js/features/details.js  # 3 mirror screens: openEmpDetail/renderEdet/edetCopy, openTruckDetail/renderTdet/tdetCopy,
+                        #   openLocDetail/renderLdet/ldetCopy. Helpers: computeSeasonSummary, locLastActivity, daysAgo, buildLocActivity
+js/features/backup.js   # exportBackup (downloads JSON), importBackup (validates schema, confirms, replaces, reloads)
+google-apps-script.js   # TEMPLATE ONLY — not loaded by index.html. Copy code to Google Apps Script editor, deploy as Web App,
+                        #   paste URL into js/core/config.js → CFG.APPS_SCRIPT_URL
 ```
 
 **Script load order** (mirrors browser execution): config → utils → storage → api → ui → master → logs → dashboard → details → backup → app
@@ -117,7 +118,7 @@ After **any** code change, run these in order (paths are relative to repo root):
 
 ```bash
 # 1. Syntax check all JS files
-for f in js/*.js; do node --check "$f" || echo "FAIL: $f"; done
+for f in js/**/*.js; do node --check "$f" || echo "FAIL: $f"; done
 
 # 2. Cross-script integration test (most important)
 node /tmp/integration-test.js
@@ -145,7 +146,12 @@ const ctx = {
   console
 };
 vm.createContext(ctx);
-const order = ['config.js','utils.js','storage.js','api.js','ui.js','master.js','logs.js','dashboard.js','details.js','backup.js','app.js'];
+const order = [
+  'core/config.js','core/utils.js','core/storage.js','core/api.js',
+  'ui/ui.js',
+  'features/master.js','features/logs.js','features/dashboard.js','features/details.js','features/backup.js',
+  'core/app.js'
+];
 for (const f of order) {
   vm.runInContext(fs.readFileSync(`js/${f}`,'utf8'), ctx, {filename:f});
 }
@@ -169,16 +175,16 @@ vm.runInContext(`
 3. JS: render function in the most relevant `js/*.js`. Navigate with `go('screen-X')`.
 
 **For a new master data type:**
-1. Add to `MD` default in `js/config.js`
-2. Add `render*List`, `open*Mod`, `save*`, `del*` in `js/master.js`
+1. Add to `MD` default in `js/core/config.js`
+2. Add `render*List`, `open*Mod`, `save*`, `del*` in `js/features/master.js`
 3. Add tab in `index.html` master screen + panel + modal
 4. Update `switchTab` array, `renderAll`
-5. If used in dropdowns, add branch in `renderDrop` (`js/ui.js`)
+5. If used in dropdowns, add branch in `renderDrop` (`js/ui/ui.js`)
 
 **For a new log type:**
-1. New cache var in `js/config.js` (with localStorage key)
-2. Update `loadLogs`/`saveLogs` in `js/storage.js`
-3. Form screen + render + submit in `js/logs.js`
+1. New cache var in `js/core/config.js` (with localStorage key)
+2. Update `loadLogs`/`saveLogs` in `js/core/storage.js`
+3. Form screen + render + submit in `js/features/logs.js`
 4. Edit/delete with `showUndoToast` (consistency)
 5. Display in dashboard + relevant detail screens
 
