@@ -5,11 +5,12 @@
  * ============================================================ */
 
 // ===== API =====
+// Data is persisted via saveLogs()/saveMD() which write to Firebase directly.
+// sendAPI now just confirms success and marks sync status.
 async function sendAPI(payload,msg,onOk){
-  if(CFG.APPS_SCRIPT_URL==='YOUR_GOOGLE_APPS_SCRIPT_URL'){await new Promise(r=>setTimeout(r,600));onOk();showOk('บันทึกสำเร็จ!',msg+'\n(โหมดทดสอบ — ยังไม่ได้ตั้งค่าเชื่อม Sheets)');markSyncStatus(payload,'local');return;}
-  showLoad('กำลังบันทึก...');
-  try{const r=await fetch(CFG.APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const d=await r.json();hideLoad();if(d.error)throw new Error(d.error);markSyncStatus(payload,'synced');onOk();showOk('บันทึกสำเร็จ!',msg);}
-  catch(e){hideLoad();markSyncStatus(payload,'failed');onOk();/*still apply locally*/showSyncBanner(true);}
+  onOk();
+  showOk('บันทึกสำเร็จ!',msg);
+  markSyncStatus(payload,db?'synced':'local');
 }
 
 
@@ -31,7 +32,7 @@ async function checkLine(){
   try{const r=await fetch(CFG.APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'lineAuth',code,redirectUri:CFG.REDIRECT_URI})});const d=await r.json();if(d.error)throw new Error(d.error);if(!CFG.ALLOWED_USER_IDS.includes(d.userId)){hideLoad();alert('คุณไม่ได้รับอนุญาต');return;}user=d;sessionStorage.setItem('fu',JSON.stringify(d));window.history.replaceState({},'',window.location.pathname);afterLogin();}
   catch(e){hideLoad();alert('เข้าสู่ระบบไม่สำเร็จ: '+e.message);}
 }
-function afterLogin(){hideLoad();const n=user.displayName||'ผู้จัดการ';document.getElementById('home-name').textContent=n;const w=document.getElementById('av-wrap');w.innerHTML=user.pictureUrl?`<img src="${user.pictureUrl}" class="av">`:`<div class="av-ph">${n[0]}</div>`;go('screen-home');}
+function afterLogin(){hideLoad();const n=user.displayName||'ผู้จัดการ';document.getElementById('home-name').textContent=n;const w=document.getElementById('av-wrap');w.innerHTML=user.pictureUrl?`<img src="${user.pictureUrl}" class="av">`:`<div class="av-ph">${n[0]}</div>`;attachListeners();go('screen-home');}
 function logout(){if(!confirm('ออกจากระบบ?'))return;sessionStorage.removeItem('fu');user=null;go('screen-login');}
 
 

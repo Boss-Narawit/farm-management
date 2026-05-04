@@ -6,13 +6,14 @@ Read this first before any work on this project. It contains the project convent
 
 ## Project at a glance
 
-Thai-language farm management web app for ~3-4 elderly (60+) sugarcane farm managers. Single-page app, classic vanilla JS (no framework, no build step), hosted on GitHub Pages, optional Google Sheets backend via Apps Script. Target users are mobile-first; UI text is Thai; code/comments are English.
+Thai-language farm management web app for ~10 sugarcane farm managers sharing a central dataset. Single-page app, classic vanilla JS (no framework, no build step), hosted on GitHub Pages. Real-time multi-device sync via Firebase Realtime Database. LINE login for identity. Target users are mobile-first; UI text is Thai; code/comments are English.
 
 **Constraints that shaped every decision:**
 - No build step — open `index.html` directly works
 - Classic `<script>` tags (NOT ES modules) — `let`/`const`/`function` at top level are shared across all files
 - Mobile WebView compatible (LINE in-app browser is the lowest target — 5 MB localStorage)
-- Works offline in demo mode; Google Sheets sync is optional
+- Works offline — localStorage is the offline cache; Firebase syncs when reconnected
+- Firebase SDK loaded via CDN (`<script>` tag) — no bundler needed
 
 ## CRITICAL: File structure
 
@@ -27,15 +28,24 @@ Sub-folder layout:
 
 ```
 index.html              # HTML skeleton + all screens + modals. No inline <script> or <style>; everything imported.
+                        #   Loads Firebase SDK (v8 compat) via CDN before config.js.
 styles.css              # Theme tokens, screens, modals, components, @media print
-js/core/config.js       # CFG object (LINE_CLIENT_ID, APPS_SCRIPT_URL), MD = {employees, trucks, locations, tasks, contractors, fertilizers},
+js/core/config.js       # CFG object (LINE_CLIENT_ID, APPS_SCRIPT_URL, FIREBASE config), MD = {employees, trucks, locations, tasks, contractors, fertilizers},
                         #   logsCache, truckLogsCache, outsourceLogsCache, holidays, runtime state (user, formDur, qlDur, edit*Id, dashView)
 js/core/utils.js        # isoDate, parseISO, thaiDate, escHtml, escAttr, setTodayForms, fallbackCopy,
                         #   MO[] (Thai month names), DOW[]/DOW_S[] (Thai day names)
-js/core/storage.js      # loadMD/saveMD (key 'fm_md'), loadLogs/saveLogs (keys 'fm_logs', 'fm_tlogs', 'fm_oslogs', 'fm_holidays')
-js/core/api.js          # sendAPI (Google Sheets POST), loginLine/loginDemo/afterLogin/logout/checkLine, markSyncStatus, syncDot
-js/core/app.js          # Boot — window.onload → loadMD/loadLogs/setTodayForms/checkLine; global click listener closes open combos
-js/ui/ui.js             # go (screen nav), showOk, showLoad/hideLoad, showE/clearE, modal helpers (closeMod),
+js/core/storage.js      # loadMD/saveMD, loadLogs/saveLogs — dual-write: localStorage (offline cache) + Firebase RTDB (sync).
+                        #   'db' var (set by initFirebase) gates Firebase writes. Keys: fm_md, fm_logs, fm_tlogs, fm_oslogs, fm_holidays.
+                        #   Data stored as JSON strings in Firebase (preserves JS arrays, avoids RTDB array→object conversion).
+js/core/api.js          # sendAPI (now just calls onOk + markSyncStatus — Firebase handles persistence),
+                        #   loginLine/loginDemo/afterLogin/logout/checkLine (LINE OAuth).
+                        #   afterLogin() calls attachListeners() before go('screen-home').
+                        #   APPS_SCRIPT_URL is now used ONLY for LINE auth, not log data.
+js/core/app.js          # Boot — window.onload → loadMD/loadLogs/initFirebase/setTodayForms/checkLine.
+                        #   initFirebase(): initializes Firebase + Anonymous Auth (skips if CFG.FIREBASE.apiKey is placeholder).
+                        #   attachListeners(): subscribes to Firebase RTDB paths after login; updates caches + re-renders active screen.
+                        #   currentScreen: tracks which screen is active (set by go() in ui.js) so listeners re-render correctly.
+js/ui/ui.js             # go (screen nav — sets currentScreen), showOk, showLoad/hideLoad, showE/clearE, modal helpers (closeMod),
                         #   combo box (oCombo/fCombo/dClose/renderDrop/selComboFromData), undo toast (showUndoToast),
                         #   updateDD (date display), logWage(), findTaskByName(), empFull(), empSub(), renderAll(), buildCalGrid()
 js/features/master.js   # CRUD for 6 master types — render*List, open*Mod, save*, del* for:
@@ -48,20 +58,26 @@ js/features/dashboard.js # renderDash → renderToday/renderMonth, openDDS/close
 js/features/details.js  # 3 mirror screens: openEmpDetail/renderEdet/edetCopy, openTruckDetail/renderTdet/tdetCopy,
                         #   openLocDetail/renderLdet/ldetCopy. Helpers: computeSeasonSummary, locLastActivity, daysAgo, buildLocActivity
 js/features/backup.js   # exportBackup (downloads JSON), importBackup (validates schema, confirms, replaces, reloads)
-google-apps-script.js   # TEMPLATE ONLY — not loaded by index.html. Copy code to Google Apps Script editor, deploy as Web App,
-                        #   paste URL into js/core/config.js → CFG.APPS_SCRIPT_URL
+google-apps-script.js   # TEMPLATE ONLY — LINE auth only. Copy to Google Apps Script editor, deploy as Web App,
+                        #   paste URL into CFG.APPS_SCRIPT_URL. Does NOT handle log data (Firebase handles that now).
 ```
 
-**Script load order** (mirrors browser execution): config → utils → storage → api → ui → master → logs → dashboard → details → backup → app
+**Script load order** (mirrors browser execution): Firebase SDK (CDN) → config → utils → storage → api → ui → master → logs → dashboard → details → backup → app
 
 ## Boot sequence
 
 `window.onload` in `app.js`:
-1. `loadMD()` + `loadLogs()` — populate `MD`, `logsCache`, `truckLogsCache`, `outsourceLogsCache`, `holidays`
-2. `setTodayForms()` — set all date fields (emp-date, truck-date, etc.) to today's ISO date
-3. `checkLine()` — handle OAuth callback; if user exists in sessionStorage, calls `afterLogin()`
+1. `loadMD()` + `loadLogs()` — populate caches from localStorage (fast, works offline)
+2. `initFirebase()` — initialize Firebase SDK + Anonymous Auth (skips if `CFG.FIREBASE.apiKey` is placeholder)
+3. `setTodayForms()` — set all date fields to today's ISO date
+4. `checkLine()` — handle OAuth callback; if user exists in sessionStorage, calls `afterLogin()`
 
-Demo mode activates automatically if `CFG.LINE_CLIENT_ID === 'YOUR_LINE_CLIENT_ID'` (the default) — both loginLine and loginDemo will silently start demo mode.
+`afterLogin()` (in `api.js`):
+- Calls `attachListeners()` — subscribes to Firebase RTDB real-time changes
+- Listeners fire immediately with current server data, updating caches and re-rendering the active screen
+- All subsequent writes from other devices arrive via listeners automatically
+
+Demo mode activates automatically if `CFG.LINE_CLIENT_ID === 'YOUR_LINE_CLIENT_ID'` (the default). Firebase also stays inactive if `CFG.FIREBASE.apiKey === 'YOUR_FIREBASE_API_KEY'`.
 
 ## Data model essentials
 
@@ -78,7 +94,7 @@ Demo mode activates automatically if `CFG.LINE_CLIENT_ID === 'YOUR_LINE_CLIENT_I
 
 **Locations have `seasonStart` (ISO date) and `seasonHistory[]`.** Changing `seasonStart` in saveLoc snapshots the previous season's totals into history if there was activity. Don't break this — users rely on it for sugarcane harvest cycles.
 
-**Records have `syncStatus: 'pending' | 'synced' | 'failed' | 'local'`** — set on creation, updated by `markSyncStatus` after API call. `'local'` means demo mode (no Sheets configured).
+**Records have `syncStatus: 'pending' | 'synced' | 'failed' | 'local'`** — set by `markSyncStatus()` in `sendAPI()`. With Firebase configured, all records are immediately marked `'synced'`. `'local'` means demo mode (no Firebase configured).
 
 ## Conventions
 
@@ -106,7 +122,13 @@ Demo mode activates automatically if `CFG.LINE_CLIENT_ID === 'YOUR_LINE_CLIENT_I
 
 **Surrogate emoji issue.** `\ud83c\udf3e` in Python strings throws UnicodeEncodeError when writing UTF-8. Use literal `🌾` or HTML entities `&#127806;`.
 
-**localStorage limits.** ~5 MB on iOS Safari/LINE WebView. ~1.5-2 years of data for a typical farm before issues. Once Google Sheets is wired up this stops mattering. Don't add storage management — user explicitly declined.
+**localStorage is now the offline cache only.** Firebase RTDB is the source of truth. localStorage still fills on boot (fast startup) and is updated by real-time listeners. The 5 MB limit no longer matters for production — it only applies to the offline/demo fallback.
+
+**Firebase stores data as JSON strings, not structured objects.** `saveLogs()` calls `JSON.stringify(logsCache)` before writing to Firebase. This avoids Firebase's array→object conversion (RTDB converts `[a,b]` to `{"0":a,"1":b}`). Listeners call `JSON.parse(snap.val())` on read. Don't change this without testing array round-trips.
+
+**Firebase listeners fire on the writing device too.** When device A calls `saveLogs()`, Firebase writes, then the listener fires on device A updating its own cache — this is a no-op in practice since the data is identical, but don't put side effects in listeners that shouldn't run locally.
+
+**`attachListeners()` is idempotent per session** — called once in `afterLogin()`. If you call it again, Firebase `.on()` adds duplicate listeners. Don't call it more than once.
 
 **Truck functions are off-limits.** User wants to redesign them later. Don't edit `submitTruck`, `openTruckDetail`, `renderTdet`, etc. unless explicitly asked.
 
@@ -124,10 +146,10 @@ for f in js/**/*.js; do node --check "$f" || echo "FAIL: $f"; done
 node /tmp/integration-test.js
 
 # 3. If editing index.html, verify script count
-grep -c "<script src=" index.html  # expect 11
+grep -c "<script src=" index.html  # expect 14 (3 Firebase CDN + 11 local)
 ```
 
-**Integration test template** — write to `/tmp/integration-test.js`, run after major changes. Loads all scripts in a shared vm context (mirrors browser script loading):
+**Integration test template** — write to `/tmp/integration-test.js`, run after major changes. The `firebase: undefined` mock makes `initFirebase()` skip gracefully (placeholder config check):
 
 ```javascript
 const vm = require('vm');
@@ -143,6 +165,7 @@ const ctx = {
   URLSearchParams: class { get(){return null;} },
   URL: { createObjectURL:()=>'blob:t', revokeObjectURL:()=>{} },
   Blob: class {}, FileReader: class { readAsText(){this.onload({target:{result:'{}'}});} },
+  firebase: undefined,  // Firebase SDK not available in Node — initFirebase() skips safely
   console
 };
 vm.createContext(ctx);
@@ -182,8 +205,8 @@ vm.runInContext(`
 5. If used in dropdowns, add branch in `renderDrop` (`js/ui/ui.js`)
 
 **For a new log type:**
-1. New cache var in `js/core/config.js` (with localStorage key)
-2. Update `loadLogs`/`saveLogs` in `js/core/storage.js`
+1. New cache var in `js/core/config.js`
+2. Update `loadLogs`/`saveLogs` in `js/core/storage.js` — add localStorage key + Firebase write + listener in `attachListeners()` in `app.js`
 3. Form screen + render + submit in `js/features/logs.js`
 4. Edit/delete with `showUndoToast` (consistency)
 5. Display in dashboard + relevant detail screens
@@ -194,7 +217,7 @@ vm.runInContext(`
 - User is comfortable with technical concepts but not a developer. Show code blocks only when needed.
 - When suggesting features, **rank by real-world impact** not by ease of build.
 - When the user says "continue", they often mean "just keep building what you proposed" — don't re-ask.
-- Thai for user-facing UI explanations; English for code discussion. Mixed is fine.
+- Respond in English — it's more token-efficient. Thai only for user-facing UI text in the app itself.
 
 ## Out of scope
 

@@ -1,0 +1,28 @@
+{
+  "name": "farm-management",
+  "version": "1.0.0",
+  "description": "ระบบจัดการข้อมูลฟาร์มอ้อยสำหรับผู้จัดการ — บันทึกงานพนักงาน, รถขนอ้อย, งานเหมา, และต้นทุนต่อแปลง",
+  "main": "google-apps-script.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Boss-Narawit/farm-management.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Boss-Narawit/farm-management/issues"
+  },
+  "homepage": "https://github.com/Boss-Narawit/farm-management#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "serve": "^14.2.6"
+  }
+}

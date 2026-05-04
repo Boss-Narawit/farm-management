@@ -10,7 +10,13 @@
 const CFG={
   LINE_CLIENT_ID:'YOUR_LINE_CLIENT_ID',
   REDIRECT_URI:window.location.origin+window.location.pathname,
-  APPS_SCRIPT_URL:'YOUR_GOOGLE_APPS_SCRIPT_URL',
+  APPS_SCRIPT_URL:'YOUR_GOOGLE_APPS_SCRIPT_URL', // used for LINE auth only
+  FIREBASE:{
+    apiKey:'YOUR_FIREBASE_API_KEY',
+    authDomain:'YOUR_PROJECT_ID.firebaseapp.com',
+    databaseURL:'https://YOUR_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app',
+    projectId:'YOUR_PROJECT_ID'
+  },
   ALLOWED_USER_IDS:['Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx']
 };
 // ============================================================
