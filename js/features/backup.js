@@ -5,8 +5,8 @@
  * ============================================================ */
 
 // ===== BACKUP / RESTORE =====
-function exportBackup(){
-  const data={
+function _buildBackupData(){
+  return {
     version:2,
     exportedAt:new Date().toISOString(),
     masterData:MD,
@@ -15,27 +15,39 @@ function exportBackup(){
     outsourceLogs:outsourceLogsCache,
     holidays:holidays
   };
-  const json=JSON.stringify(data,null,2);
+}
+function _backupSummary(){
+  const countEntries=cache=>Object.values(cache).reduce((n,arr)=>n+arr.length,0);
+  return 'พนักงาน '+(MD.employees||[]).length+' คน · บันทึกงาน '+countEntries(logsCache)+' รายการ · รถ '+countEntries(truckLogsCache)+' เที่ยว · เหมา '+countEntries(outsourceLogsCache)+' รายการ';
+}
+function _backupFilename(){
+  return 'farm-backup-'+isoDate(new Date())+'.json';
+}
+function exportBackup(){
+  const json=JSON.stringify(_buildBackupData(),null,2);
   const blob=new Blob([json],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  const today=new Date();
-  const dateStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   a.href=url;
-  a.download='farm-backup-'+dateStr+'.json';
+  a.download=_backupFilename();
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-
-  // count totals for the success message
-  let logCount=0;
-  Object.values(logsCache).forEach(arr=>logCount+=arr.length);
-  let truckCount=0;
-  Object.values(truckLogsCache).forEach(arr=>truckCount+=arr.length);
-  let osCount=0;
-  Object.values(outsourceLogsCache).forEach(arr=>osCount+=arr.length);
-  showOk('ดาวน์โหลดสำเร็จ!','พนักงาน '+(MD.employees||[]).length+' คน · บันทึกงาน '+logCount+' รายการ · รถ '+truckCount+' เที่ยว · เหมา '+osCount+' รายการ');
+  showOk('ดาวน์โหลดสำเร็จ!',_backupSummary());
+}
+async function shareBackup(){
+  const json=JSON.stringify(_buildBackupData(),null,2);
+  const file=new File([json],_backupFilename(),{type:'application/json'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file],title:'ข้อมูลสำรองฟาร์ม',text:_backupSummary()});
+    }catch(e){
+      if(e.name!=='AbortError')showOk('แชร์ไม่สำเร็จ','ลองดาวน์โหลดแทน');
+    }
+  } else {
+    exportBackup();
+  }
 }
 
 function importBackup(event){

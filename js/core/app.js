@@ -5,6 +5,10 @@
  * ============================================================ */
 
 // ===== INIT =====
+window.onafterprint=()=>{
+  document.body.classList.remove('printing');
+  document.getElementById('print-area').innerHTML='';
+};
 window.onload=()=>{
   loadMD(); loadLogs();
   setTodayForms();

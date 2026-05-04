@@ -315,7 +315,85 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--tx);min-h
 /* date nav buttons reuse */
 .dn-btn{width:36px;height:36px;border-radius:9px;border:1.5px solid var(--bd);background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Sarabun',sans-serif}
 /* print */
+#print-area {
+  display: none;
+}
+
+.print-page {
+  page-break-after: always;
+}
+
+.print-page:last-child {
+  page-break-after: auto;
+}
+
+.print-hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 2px solid black;
+  padding-bottom: 8pt;
+  margin-bottom: 12pt;
+}
+
+.print-emp {
+  font-size: 16pt;
+  font-weight: bold;
+}
+
+.print-mo {
+  font-size: 12pt;
+  color: #444;
+}
+
+.print-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10pt;
+}
+
+.print-tbl th,
+.print-tbl td {
+  border: 1px solid #ccc;
+  padding: 4pt 6pt;
+  vertical-align: top;
+}
+
+.print-tbl th {
+  background: #f0f0f0;
+  font-weight: bold;
+  text-align: left;
+}
+
+.pw {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.print-total td {
+  font-weight: 700;
+  border-top: 2px solid #000;
+  background: #fafafa;
+}
+
+.print-all-btn {
+  width: 100%;
+  background: var(--g);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 10px 0;
+  cursor: pointer;
+}
+
 @media print{
+  body.printing > *:not(#print-area){display:none!important}
+  body.printing #print-area{display:block!important}
+  .print-all-btn{display:none!important}
+
   /* Reset body and page */
   body{background:#fff!important;font-size:11pt;line-height:1.4;color:#000!important}
   @page{margin:1.5cm;size:A4}

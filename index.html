@@ -75,6 +75,11 @@
       <div style="flex:1"><div class="mt">ดาวน์โหลดข้อมูลสำรอง</div><div class="md">เก็บข้อมูลทั้งหมดไว้ในไฟล์</div></div>
       <div style="font-size:22px;color:var(--bd);margin-left:auto">›</div>
     </button>
+    <button class="menu-btn" onclick="shareBackup()">
+      <div class="mi" style="background:#dcfce7"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></div>
+      <div style="flex:1"><div class="mt">แชร์ข้อมูลสำรอง</div><div class="md">ส่งไฟล์ผ่าน LINE / อีเมล / ไดรฟ์</div></div>
+      <div style="font-size:22px;color:var(--bd);margin-left:auto">›</div>
+    </button>
     <button class="menu-btn" onclick="document.getElementById('restore-input').click()">
       <div class="mi" style="background:#dbeafe"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round"><path d="M12 22V8M5 15l7-7 7 7M3 3h18"/></svg></div>
       <div style="flex:1"><div class="mt">กู้คืนข้อมูลจากไฟล์</div><div class="md">นำเข้าจากไฟล์สำรอง</div></div>
@@ -504,7 +509,7 @@
     <button class="dn-btn" onclick="edetShiftMonth(1)">›</button>
   </div>
   <div class="edet-actions">
-    <button class="edet-action-btn print" onclick="window.print()">🖨 พิมพ์ / PDF</button>
+    <button class="edet-action-btn print" onclick="printEmpMonth()">🖨 พิมพ์ / PDF</button>
     <button class="edet-action-btn" onclick="edetCopy()">📋 คัดลอกข้อความ</button>
   </div>
   <div class="edet-body" id="edet-body"></div>
@@ -588,5 +593,6 @@
 <script src="js/features/details.js"></script>
 <script src="js/features/backup.js"></script>
 <script src="js/core/app.js"></script>
+<div id="print-area"></div>
 </body>
 </html>

@@ -104,6 +104,45 @@ function edetGotoDay(iso){
   if(typeof setView === 'function'){setView('today');}
   go('screen-dash');
 }
+function _buildEmpMonthHtml(empId,y,m){
+  const emp=MD.employees.find(e=>e.id===empId);
+  if(!emp)return'';
+  const nm=empFull(emp);
+  const daysInMonth=new Date(y,m+1,0).getDate();
+  const rows=[];
+  for(let d=1;d<=daysInMonth;d++){
+    const dt=new Date(y,m,d);
+    const iso=isoDate(dt);
+    (logsCache[iso]||[]).filter(l=>l.name===nm).forEach(log=>{
+      rows.push({date:thaiDate(dt),task:log.task||'—',location:log.location||'—',duration:log.duration,wage:logWage(log)});
+    });
+  }
+  let totalWage=0,totalFull=0,totalHalf=0;
+  rows.forEach(r=>{totalWage+=r.wage;if(r.duration==='ครึ่งวัน')totalHalf++;else totalFull++;});
+  const totalDays=totalFull+totalHalf*0.5;
+  const rowsHtml=rows.length
+    ?rows.map(r=>'<tr><td>'+escHtml(r.date)+'</td><td>'+escHtml(r.task)+'</td><td>'+escHtml(r.location)+'</td><td>'+escHtml(r.duration)+'</td><td class="pw">'+(r.wage>0?r.wage.toLocaleString('en-US')+'฿':'—')+'</td></tr>').join('')
+    :'<tr><td colspan="5" style="text-align:center;color:#999;padding:20px">ไม่มีบันทึกงานในเดือนนี้</td></tr>';
+  return '<div class="print-page">'+
+    '<div class="print-hd"><span class="print-emp">'+escHtml(nm)+'</span><span class="print-mo">'+MO[m]+' '+(y+543)+'</span></div>'+
+    '<table class="print-tbl"><thead><tr><th>วันที่</th><th>งานที่ทำ</th><th>แปลง</th><th>เวลา</th><th>ค่าจ้าง</th></tr></thead>'+
+    '<tbody>'+rowsHtml+'</tbody>'+
+    '<tfoot><tr class="print-total"><td colspan="3"></td><td>รวม '+totalDays+' วัน</td><td class="pw">'+(totalWage>0?totalWage.toLocaleString('en-US')+'฿':'—')+'</td></tr></tfoot>'+
+    '</table></div>';
+}
+function _triggerPrint(html){
+  document.getElementById('print-area').innerHTML=html;
+  document.body.classList.add('printing');
+  window.print();
+}
+function printEmpMonth(){
+  _triggerPrint(_buildEmpMonthHtml(edetEmpId,edetMonth.y,edetMonth.m));
+}
+function printAllEmpsMonth(y,m){
+  const emps=MD.employees.filter(e=>(e.status||'active')==='active');
+  if(!emps.length){alert('ไม่มีพนักงาน');return;}
+  _triggerPrint(emps.map(e=>_buildEmpMonthHtml(e.id,y,m)).join(''));
+}
 function edetCopy(){
   const emp=MD.employees.find(e=>e.id===edetEmpId);
   if(!emp)return;

@@ -187,6 +187,7 @@ function renderMonth(){
       html+=`<div style="margin-top:10px;padding-top:10px;border-top:1.5px dashed #9FE1CB;display:flex;align-items:center;justify-content:space-between"><div style="font-size:14px;font-weight:600;color:var(--gd)">รวมค่าแรงทั้งหมด</div><div style="font-size:20px;font-weight:700;color:var(--gd)">${grandTotal.toLocaleString('en-US',{maximumFractionDigits:0})}฿</div></div>`;
     }
     html+=`</div></div>`;
+    html+=`<button class="print-all-btn" onclick="printAllEmpsMonth(${y},${m})">🖨 พิมพ์สรุปค่าแรง — ${MO[m]} ${y+543}</button>`;
   }
 
   // calendar
