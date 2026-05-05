@@ -506,5 +506,3 @@ async function deleteFertLog(){
 }
 
 
-// ===== DDS PATCH FOR EDIT LOG (multi-job aware) =====
-// (Override openDDS row rendering to use editLog with log.id)

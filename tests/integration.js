@@ -289,6 +289,93 @@ check('thaiDate handles ISO string input (used in permit badge)', ()=>run(`
   if(!r.includes('2642'))throw new Error('year wrong: '+r);
 `));
 
+// ── computeSeasonSummary ──────────────────────────────────────────────────────
+console.log('\ncomputeSeasonSummary');
+run(`
+  MD.tasks=[{name:'ตัดอ้อย',dailyRate:400}];
+  logsCache={'2026-01-10':[{id:'ls1',name:'สมชาย',task:'ตัดอ้อย',location:'แปลง A',duration:'เต็มวัน',loggedBy:'test'}]};
+  outsourceLogsCache={'2026-01-11':[{id:'os1',location:'แปลง A',task:'ไถ',contractor:'บริษัท ก',fee:500,loggedBy:'test'}]};
+  fertLogCache={'2026-01-12':[{id:'fz1',location:'แปลง A',fertilizer:'ยูเรีย',quantity:50,unit:'กก.',loggedBy:'test'}]};
+`);
+check('season entries counts employee + outsource + fertilizer', ()=>run(`
+  var loc={name:'แปลง A',seasonStart:'2026-01-01'};
+  var s=computeSeasonSummary(loc);
+  if(!s)throw new Error('null result');
+  if(s.entries!==3)throw new Error('expected 3 entries, got '+s.entries);
+`));
+check('season cost counts wages + outsource fee but not fertilizer', ()=>run(`
+  var loc2={name:'แปลง A',seasonStart:'2026-01-01'};
+  var s2=computeSeasonSummary(loc2);
+  if(s2.cost!==900)throw new Error('expected 900 (400+500), got '+s2.cost);
+`));
+check('season days counts only employee logs not outsource or fertilizer', ()=>run(`
+  var loc3={name:'แปลง A',seasonStart:'2026-01-01'};
+  var s3=computeSeasonSummary(loc3);
+  if(s3.days!==1)throw new Error('expected 1 day, got '+s3.days);
+`));
+check('computeSeasonSummary returns null when no seasonStart', ()=>run(`
+  var s4=computeSeasonSummary({name:'แปลง A'});
+  if(s4!==null)throw new Error('expected null');
+`));
+
+// ── saveLoc season snapshot ───────────────────────────────────────────────────
+console.log('\nsaveLoc season history snapshot');
+run(`
+  MD.locations=[];
+  MD.tasks=[{name:'ตัดอ้อย',dailyRate:400}];
+  MD.employees=[]; MD.trucks=[]; MD.contractors=[]; MD.fertilizers=[];
+  logsCache={'2026-01-10':[{id:'lh1',name:'สมชาย',task:'ตัดอ้อย',location:'แปลง B',duration:'เต็มวัน',loggedBy:'test'}]};
+  outsourceLogsCache={};
+  fertLogCache={'2026-01-11':[{id:'fh1',location:'แปลง B',fertilizer:'ยูเรีย',quantity:50,unit:'กก.',loggedBy:'test'}]};
+  editLocId='loc-b-test';
+  document.getElementById=function(id){
+    var vals={'ml-name':'แปลง B','ml-id':'B01','ml-size':'10','ml-class':'A','ml-loc':'อ.เมือง','ml-detail':''};
+    return {value:vals[id]||'',classList:{add:function(){},remove:function(){},toggle:function(){},contains:function(){return false;}},textContent:'',innerHTML:'',style:{},scrollIntoView:function(){},focus:function(){},getAttribute:function(){return '';},appendChild:function(){},removeChild:function(){},select:function(){},dataset:{},remove:function(){}};
+  };
+  // Inject existing location with old seasonStart so snapshot triggers
+  MD.locations=[{id:'loc-b-test',name:'แปลง B',seasonStart:'2026-01-01',seasonHistory:[]}];
+`);
+check('saveLoc snapshot includes fertilizer in entry count', ()=>run(`
+  document.getElementById=function(id){
+    var vals={'ml-name':'แปลง B','ml-id':'B01','ml-size':'10','ml-class':'A','ml-loc':'อ.เมือง','ml-detail':'','ml-season':'2026-06-01'};
+    return {value:vals[id]||'',classList:{add:function(){},remove:function(){},toggle:function(){},contains:function(){return false;}},textContent:'',innerHTML:'',style:{},scrollIntoView:function(){},focus:function(){},getAttribute:function(){return '';},appendChild:function(){},removeChild:function(){},select:function(){},dataset:{},remove:function(){}};
+  };
+  editLocId='loc-b-test';
+  saveLoc();
+  var _loc=MD.locations.find(function(l){return l.name==='แปลง B';});
+  if(!_loc)throw new Error('location not found after saveLoc');
+  if(!_loc.seasonHistory||!_loc.seasonHistory.length)throw new Error('no season history saved');
+  var _snap=_loc.seasonHistory[0];
+  if(_snap.entries!==2)throw new Error('expected 2 entries (1 log + 1 fert), got '+_snap.entries);
+`));
+
+// ── importBackup schema validation ────────────────────────────────────────────
+console.log('\nimportBackup schema validation');
+check('importBackup rejects missing masterData', ()=>{
+  let alerted = false;
+  const orig = ctx.alert;
+  ctx.alert = ()=>{ alerted = true; };
+  const badJson = JSON.stringify({ logs: {} });
+  const origFR = ctx.FileReader;
+  ctx.FileReader = class { readAsText(){ this.onload&&this.onload({target:{result:badJson}}); } };
+  run(`importBackup({target:{files:[{}],value:''}});`);
+  ctx.FileReader = origFR;
+  ctx.alert = orig;
+  if (!alerted) throw new Error('should alert on missing masterData');
+});
+check('importBackup rejects non-array employees', ()=>{
+  let alerted = false;
+  const orig = ctx.alert;
+  ctx.alert = ()=>{ alerted = true; };
+  const badJson = JSON.stringify({ masterData:{employees:'bad',tasks:[],locations:[],trucks:[]}, logs:{} });
+  const origFR = ctx.FileReader;
+  ctx.FileReader = class { readAsText(){ this.onload&&this.onload({target:{result:badJson}}); } };
+  run(`importBackup({target:{files:[{}],value:''}});`);
+  ctx.FileReader = origFR;
+  ctx.alert = orig;
+  if (!alerted) throw new Error('should alert on non-array employees');
+});
+
 // ── Summary ───────────────────────────────────────────────────────────────────
 console.log('\n' + '─'.repeat(50));
 console.log(`Results: ${passed} passed, ${failed} failed`);

@@ -253,6 +253,9 @@ function computeSeasonSummary(loc){
       entries++;
       cost+=(o.fee||0);
     });
+    (fertLogCache[iso]||[]).filter(fl=>fl.location===loc.name).forEach(()=>{
+      entries++;
+    });
     d.setDate(d.getDate()+1);
   }
   const elapsedDays=Math.floor((today-start)/86400000)+1;

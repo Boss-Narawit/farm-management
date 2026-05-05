@@ -84,7 +84,10 @@ function importBackup(event){
   reader.onload=function(e){
     try{
       const data=JSON.parse(e.target.result);
-      if(!data.masterData||!data.logs){
+      const md=data.masterData;
+      if(!md||typeof data.logs!=='object'||
+         !Array.isArray(md.employees)||!Array.isArray(md.tasks)||
+         !Array.isArray(md.locations)||!Array.isArray(md.trucks)){
         alert('ไฟล์นี้ไม่ใช่ไฟล์สำรองที่ถูกต้อง');
         return;
       }

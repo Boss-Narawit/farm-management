@@ -194,6 +194,9 @@ function saveLoc(){
           entries++;
           cost+=(o.fee||0);
         });
+        (fertLogCache[iso]||[]).filter(fl=>fl.location===name).forEach(()=>{
+          entries++;
+        });
         d.setDate(d.getDate()+1);
       }
       const elapsedDays=Math.floor((endDate-startDate)/86400000)+1;
