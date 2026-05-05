@@ -25,7 +25,7 @@ function loginLine(){
   window.location.href='https://access.line.me/oauth2/v2.1/authorize?'+new URLSearchParams({response_type:'code',client_id:CFG.LINE_CLIENT_ID,redirect_uri:CFG.REDIRECT_URI,state:st,scope:'profile openid'});
 }
 async function checkLine(){
-  const sv=sessionStorage.getItem('fu');if(sv){user=JSON.parse(sv);afterLogin();return;}
+  const sv=sessionStorage.getItem('fu');if(sv){try{user=JSON.parse(sv);afterLogin();return;}catch(e){sessionStorage.removeItem('fu');}}
   const p=new URLSearchParams(window.location.search),code=p.get('code'),state=p.get('state');if(!code)return;
   if(state!==sessionStorage.getItem('ls')){alert('เกิดข้อผิดพลาด');return;}
   showLoad('กำลังเข้าสู่ระบบ...');
@@ -58,10 +58,6 @@ function markSyncStatus(payload,status){
   saveLogs();
 }
 
-function showSyncBanner(isError){
-  // Optional helper — can be wired to UI later if needed.
-  // For now, individual sync dots tell the story.
-}
 
 function syncDot(status){
   // Returns small HTML icon for a given sync status

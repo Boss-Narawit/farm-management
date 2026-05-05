@@ -112,7 +112,7 @@ function selComboFromData(el,inp,drop){
   document.getElementById(inp).value=v;
   document.getElementById(drop).classList.remove('open');
 }
-function selCombo(inp,drop,v){document.getElementById(inp).value=v;document.getElementById(drop).classList.remove('open');}
+
 function dClose(d){setTimeout(()=>document.getElementById(d).classList.remove('open'),180);}
 function closeAllCombos(){document.querySelectorAll('.cdrop').forEach(d=>d.classList.remove('open'));}
 

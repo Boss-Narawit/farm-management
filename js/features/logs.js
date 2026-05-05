@@ -48,13 +48,7 @@ function editOSLog(iso, osId){
   document.getElementById('eo-contractor').value=log.contractor||'';
   document.getElementById('eo-fee').value=log.fee||'';
   document.getElementById('eo-note').value=log.note||'';
-  // reset delete button state
-  const btn=document.querySelector('#mod-editos .mc');
-  if(btn){
-    delete btn.dataset.confirming;
-    btn.innerHTML='&#128465; ลบ';
-    btn.style.background='';btn.style.color='var(--rd)';btn.style.borderColor='#fca5a5';btn.style.fontWeight='';
-  }
+  _resetConfirmBtn(document.querySelector('#mod-editos .mc'));
   document.getElementById('mod-editos').classList.add('open');
 }
 
@@ -80,8 +74,7 @@ async function saveOSLog(){
   saveLogs();
   closeMod('mod-editos');
   await sendAPI({action:'editOutsource',date:eoIso,osId:eoId,...updated},'แก้ไขสำเร็จ',()=>{
-    const a=document.querySelector('.screen.active'); const id=a?a.id:'';
-    if(id==='screen-ldet')renderLdet();
+    if(currentScreen==='screen-ldet')renderLdet();
   });
 }
 
@@ -91,13 +84,7 @@ async function deleteOSLog(){
     btn.dataset.confirming='1';
     btn.textContent='⚠ กดอีกครั้งเพื่อยืนยันลบ';
     btn.style.background='#fef2f2';btn.style.color='#dc2626';btn.style.borderColor='#dc2626';btn.style.fontWeight='700';
-    setTimeout(()=>{
-      if(btn.dataset.confirming){
-        delete btn.dataset.confirming;
-        btn.innerHTML='&#128465; ลบ';
-        btn.style.background='';btn.style.color='var(--rd)';btn.style.borderColor='#fca5a5';btn.style.fontWeight='';
-      }
-    },5000);
+    setTimeout(()=>{if(btn.dataset.confirming)_resetConfirmBtn(btn);},5000);
     return;
   }
   if(btn)delete btn.dataset.confirming;
@@ -115,12 +102,10 @@ async function deleteOSLog(){
     if(!outsourceLogsCache[deletedIso])outsourceLogsCache[deletedIso]=[];
     outsourceLogsCache[deletedIso].push(deletedRec);
     saveLogs();
-    const a=document.querySelector('.screen.active'); const id=a?a.id:'';
-    if(id==='screen-ldet')renderLdet();
+    if(currentScreen==='screen-ldet')renderLdet();
   });
   await sendAPI({action:'deleteOutsource',date:eoIso,osId:eoId,timestamp:new Date().toISOString()},'ลบสำเร็จ',()=>{
-    const a=document.querySelector('.screen.active'); const id=a?a.id:'';
-    if(id==='screen-ldet')renderLdet();
+    if(currentScreen==='screen-ldet')renderLdet();
   });
 }
 
@@ -254,6 +239,9 @@ async function submitBulk(){
     logsCache[date].push({id,name:nm,task,location:loc,duration:bulkDur,note:'',loggedBy:user.displayName,syncStatus:'pending'});
   });
   saveLogs();
+  localStorage.setItem('fm_lastBulkDate',date);
+  localStorage.setItem('fm_lastBulkTask',task);
+  localStorage.setItem('fm_lastBulkLoc',loc);
   await sendAPI({action:'addEmployeeBulk',date,ids,names,task,location:loc,duration:bulkDur,loggedBy:user.displayName,timestamp:new Date().toISOString()},
     'บันทึก '+names.length+' คนสำเร็จ',()=>{
       bulkSelected=new Set();
@@ -277,7 +265,7 @@ function editLog(iso,logId){
   document.getElementById('el-task').value=log.task||'';
   document.getElementById('el-loc').value=log.location||'';
   setELDur(log.duration||'เต็มวัน');
-  _resetDeleteBtn();
+  _resetConfirmBtn(document.querySelector('#mod-editlog .mc'));
   document.getElementById('mod-editlog').classList.add('open');
 }
 function setELDur(v){
@@ -296,9 +284,8 @@ async function saveEditLog(){
   saveLogs();
   closeMod('mod-editlog');
   await sendAPI({action:'editEmployee',date:elIso,logId:elLogId,name:old.name,task,location:loc,duration:elDur,timestamp:new Date().toISOString()},'แก้ไขสำเร็จ',()=>{
-    const a=document.querySelector('.screen.active'); const id=a?a.id:'';
-    if(id==='screen-dash')renderDash();
-    else if(id==='screen-edet')renderEdet();
+    if(currentScreen==='screen-dash')renderDash();
+    else if(currentScreen==='screen-edet')renderEdet();
   });
 }
 async function deleteLog(){
@@ -311,17 +298,7 @@ async function deleteLog(){
     btn.style.color='#dc2626';
     btn.style.borderColor='#dc2626';
     btn.style.fontWeight='700';
-    // auto-reset after 5 seconds if not pressed again
-    setTimeout(()=>{
-      if(btn.dataset.confirming){
-        delete btn.dataset.confirming;
-        btn.textContent='🗑 ลบ';
-        btn.style.background='';
-        btn.style.color='var(--rd)';
-        btn.style.borderColor='#fca5a5';
-        btn.style.fontWeight='';
-      }
-    },5000);
+    setTimeout(()=>{if(btn.dataset.confirming)_resetConfirmBtn(btn);},5000);
     return;
   }
   // Confirmed — proceed with delete
@@ -335,34 +312,26 @@ async function deleteLog(){
   if(logsCache[elIso].length===0)delete logsCache[elIso];
   saveLogs();
   closeMod('mod-editlog');
-  if(btn){btn.textContent='🗑 ลบ';btn.style.background='';btn.style.color='var(--rd)';btn.style.borderColor='#fca5a5';btn.style.fontWeight='';}
+  _resetConfirmBtn(btn);
   // Show undo toast
   showUndoToast('ลบบันทึกของ '+deletedRec.name+' แล้ว',()=>{
     if(!logsCache[deletedIso])logsCache[deletedIso]=[];
     logsCache[deletedIso].push(deletedRec);
     saveLogs();
-    const a=document.querySelector('.screen.active'); const id=a?a.id:'';
-    if(id==='screen-dash')renderDash();
-    else if(id==='screen-edet')renderEdet();
+    if(currentScreen==='screen-dash')renderDash();
+    else if(currentScreen==='screen-edet')renderEdet();
   });
   await sendAPI({action:'deleteEmployee',date:elIso,logId:elLogId,timestamp:new Date().toISOString()},'ลบสำเร็จ',()=>{
-    const a=document.querySelector('.screen.active'); const id=a?a.id:'';
-    if(id==='screen-dash')renderDash();
-    else if(id==='screen-edet')renderEdet();
+    if(currentScreen==='screen-dash')renderDash();
+    else if(currentScreen==='screen-edet')renderEdet();
   });
 }
 
-// Reset delete button when modal opens or closes
-function _resetDeleteBtn(){
-  const btn=document.querySelector('#mod-editlog .mc');
-  if(btn){
-    delete btn.dataset.confirming;
-    btn.textContent='🗑 ลบ';
-    btn.style.background='';
-    btn.style.color='var(--rd)';
-    btn.style.borderColor='#fca5a5';
-    btn.style.fontWeight='';
-  }
+function _resetConfirmBtn(btn){
+  if(!btn)return;
+  delete btn.dataset.confirming;
+  btn.textContent='🗑 ลบ';
+  btn.style.background='';btn.style.color='var(--rd)';btn.style.borderColor='#fca5a5';btn.style.fontWeight='';
 }
 
 

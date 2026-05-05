@@ -312,8 +312,6 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--tx);min-h
 .bulk-action-bar{position:sticky;bottom:0;background:#fff;border-top:1.5px solid var(--bd);padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 -4px 12px rgba(0,0,0,.06)}
 .bulk-count{font-size:14px;font-weight:600;color:var(--g);flex:1}
 .bulk-select-all-btn{padding:8px 12px;border-radius:9px;border:1.5px solid var(--g);background:var(--gl);color:var(--gd);font-size:13px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif;white-space:nowrap}
-/* date nav buttons reuse */
-.dn-btn{width:36px;height:36px;border-radius:9px;border:1.5px solid var(--bd);background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Sarabun',sans-serif}
 /* print */
 #print-area {
   display: none;
