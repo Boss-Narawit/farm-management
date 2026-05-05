@@ -67,7 +67,9 @@ function getWage(tasks, log) {
 }
 
 function buildContext({ md, recentLogs, recentOsLogs, today }) {
-  const employees = (md.employees || []).filter(e => e.status === 'active').map(e => e.name);
+  const employees = (md.employees || [])
+    .filter(e => (e.status || 'active') === 'active')
+    .map(e => (e.first + (e.last ? ' ' + e.last : '')).trim());
   const tasks = (md.tasks || []).map(t => `${t.name}(${t.dailyRate ?? '?'}บาท/วัน)`);
   const locations = (md.locations || []).map(l => l.name);
 

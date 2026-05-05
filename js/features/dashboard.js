@@ -27,7 +27,7 @@ function renderToday(){
   const holidayReason=isHoliday?holidays[iso]:'';
   const logs=logsCache[iso]||[];
   const loggedSet=new Set(logs.map(l=>l.name));
-  const emps=MD.employees;
+  const emps=MD.employees.filter(e=>(e.status||'active')==='active');
   const logged=emps.filter(e=>loggedSet.has(empFull(e))).length;
   const missing=(isFuture||isHoliday)?0:emps.filter(e=>!loggedSet.has(empFull(e))).length;
 
@@ -86,7 +86,7 @@ function renderToday(){
   document.getElementById('dash-scroll').innerHTML=html;
 }
 
-function shiftDay(n){dashDay=new Date(dashDay.getTime()+n*86400000);renderToday();}
+function shiftDay(n){dashDay=new Date(dashDay.getTime()+n*86400000);dashDay.setHours(0,0,0,0);renderToday();}
 function goToday(){dashDay=new Date();dashDay.setHours(0,0,0,0);renderToday();}
 
 // ---- QUICK LOG ----
