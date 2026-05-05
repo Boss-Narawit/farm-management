@@ -188,6 +188,7 @@ function renderMonth(){
     }
     html+=`</div></div>`;
     html+=`<button class="print-all-btn" onclick="printAllEmpsMonth(${y},${m})">🖨 พิมพ์สรุปค่าแรง — ${MO[m]} ${y+543}</button>`;
+    html+=`<button class="print-all-btn" style="background:#fff;color:#1a8f5c;border:1.5px solid var(--g);margin-top:8px" onclick="exportPayrollCSV(${y},${m})">&#8595; ดาวน์โหลด CSV — ${MO[m]} ${y+543}</button>`;
   }
 
   // calendar

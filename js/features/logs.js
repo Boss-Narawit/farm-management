@@ -191,13 +191,44 @@ function renderBulkGrid(){
   const emps=MD.employees.filter(e=>(e.status||'active')==='active');
   const el=document.getElementById('bulk-emp-grid');
   if(!emps.length){el.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--mu)">ยังไม่มีพนักงาน</div>';return;}
-  el.innerHTML=emps.map(e=>{
+  // Build group map
+  const groups={};
+  const ungrouped=[];
+  emps.forEach(e=>{
+    if(e.group){
+      if(!groups[e.group])groups[e.group]=[];
+      groups[e.group].push(e);
+    } else ungrouped.push(e);
+  });
+  const hasGroups=Object.keys(groups).length>0;
+  let html='';
+  const cardHtml=e=>{
     const sel=bulkSelected.has(e.id);
     return '<div class="bulk-emp-card'+(sel?' selected':'')+'" onclick="toggleBulkEmp(\''+e.id+'\')">'+
-      '<div class="bulk-check">✓</div>'+
+      '<div class="bulk-check">&#10003;</div>'+
       '<div class="bulk-emp-name">'+escHtml(empFull(e))+'</div>'+
       '</div>';
-  }).join('');
+  };
+  Object.keys(groups).forEach(gname=>{
+    const grpEmps=groups[gname];
+    const allSel=grpEmps.every(e=>bulkSelected.has(e.id));
+    html+='<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:6px 2px 4px;border-bottom:1px solid var(--bd);margin-bottom:4px">'+
+      '<span style="font-size:13px;font-weight:700;color:#7c5cbf">'+escHtml(gname)+'</span>'+
+      '<button onclick="toggleGroupSelect(\''+escAttr(gname)+'\')" style="background:'+(allSel?'var(--gl)':'#f0ebff')+';color:'+(allSel?'var(--gd)':'#7c5cbf')+';border:1px solid '+(allSel?'var(--g)':'#c4b5fd')+';border-radius:8px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:Sarabun,sans-serif">'+(allSel?'ยกเลิกกลุ่ม':'เลือกกลุ่ม')+'</button>'+
+      '</div>';
+    html+=grpEmps.map(cardHtml).join('');
+  });
+  if(ungrouped.length){
+    if(hasGroups)html+='<div style="grid-column:1/-1;padding:6px 2px 4px;border-bottom:1px solid var(--bd);margin-bottom:4px"><span style="font-size:12px;color:var(--mu)">ไม่ได้กำหนดกลุ่ม</span></div>';
+    html+=ungrouped.map(cardHtml).join('');
+  }
+  el.innerHTML=html;
+}
+function toggleGroupSelect(groupName){
+  const grpEmps=MD.employees.filter(e=>(e.status||'active')==='active'&&(e.group||'')===groupName);
+  const allSel=grpEmps.every(e=>bulkSelected.has(e.id));
+  grpEmps.forEach(e=>{allSel?bulkSelected.delete(e.id):bulkSelected.add(e.id);});
+  renderBulkGrid();updateBulkCount();
 }
 function toggleBulkEmp(id){
   if(bulkSelected.has(id))bulkSelected.delete(id);
@@ -215,6 +246,20 @@ function updateBulkCount(){
   const emps=MD.employees.filter(e=>(e.status||'active')==='active');
   document.getElementById('bulk-count').textContent='เลือกแล้ว '+n+' คน';
   document.getElementById('bulk-select-all-btn').textContent=(n===emps.length&&n>0)?'ยกเลิกทั้งหมด':'เลือกทั้งหมด';
+}
+function loadYesterdayLogs(){
+  const today=isoDate(new Date());
+  const yesterday=isoDate(new Date(new Date(today+'T00:00:00').getTime()-86400000));
+  const yLogs=logsCache[yesterday]||[];
+  if(!yLogs.length){alert('ไม่พบบันทึกเมื่อวาน ('+thaiDate(parseISO(yesterday))+')');return;}
+  const nameToId={};
+  MD.employees.filter(e=>(e.status||'active')==='active').forEach(e=>{nameToId[empFull(e)]=e.id;});
+  bulkSelected=new Set();
+  yLogs.forEach(l=>{const id=nameToId[l.name];if(id)bulkSelected.add(id);});
+  const freq=(key)=>{const mp={};yLogs.forEach(l=>{if(l[key])mp[l[key]]=(mp[l[key]]||0)+1;});return Object.keys(mp).sort((a,b)=>mp[b]-mp[a])[0]||'';};
+  document.getElementById('bulk-task').value=freq('task');
+  document.getElementById('bulk-loc').value=freq('location');
+  renderBulkGrid();updateBulkCount();
 }
 function setBulkDur(v){
   bulkDur=v;
@@ -332,6 +377,132 @@ function _resetConfirmBtn(btn){
   delete btn.dataset.confirming;
   btn.textContent='🗑 ลบ';
   btn.style.background='';btn.style.color='var(--rd)';btn.style.borderColor='#fca5a5';btn.style.fontWeight='';
+}
+
+
+// ===== FERTILIZER LOG =====
+let efIso='', efId='';
+function initFertLogForm(){
+  document.getElementById('flog-date').value=isoDate(new Date());
+  updateDD('flog-date','flog-dd');
+  document.getElementById('flog-loc').value='';
+  document.getElementById('flog-fert').value='';
+  document.getElementById('flog-qty').value='';
+  document.getElementById('flog-unit').value='';
+  document.getElementById('flog-note').value='';
+  clearE('flog-err');
+  renderFertLogList();
+}
+function renderFertLogList(){
+  const el=document.getElementById('fertlog-list');
+  if(!el)return;
+  const allEntries=[];
+  Object.keys(fertLogCache).forEach(iso=>{
+    (fertLogCache[iso]||[]).forEach(fl=>allEntries.push({iso,...fl}));
+  });
+  allEntries.sort((a,b)=>b.iso.localeCompare(a.iso)||b.timestamp.localeCompare(a.timestamp||''));
+  const shown=allEntries.slice(0,15);
+  if(!shown.length){el.innerHTML='<div style="text-align:center;padding:24px;color:var(--mu)">ยังไม่มีบันทึกการใส่ปุ๋ย</div>';return;}
+  el.innerHTML=shown.map(fl=>{
+    return '<div class="edet-task-row" onclick="editFertLog(\''+fl.iso+'\',\''+fl.id+'\')" style="cursor:pointer">'+
+      '<div class="edet-task-date"><div class="edet-task-day" style="color:#558b2f">'+parseInt(fl.iso.slice(8))+'</div><div class="edet-task-mon">'+MO[parseInt(fl.iso.slice(5,7))-1].substring(0,3)+'</div></div>'+
+      '<div class="edet-task-info">'+
+        '<div class="edet-task-name">'+escHtml(fl.fertilizer||'—')+'</div>'+
+        '<div class="edet-task-loc">&#127806; '+escHtml(fl.location||'—')+(fl.quantity?' · '+fl.quantity+' '+(fl.unit||''):'')+'</div>'+
+        (fl.note?'<div class="edet-task-loc">'+escHtml(fl.note)+'</div>':'')+
+      '</div>'+
+      '<span style="font-size:11px;font-weight:700;background:#f1f8e9;color:#558b2f;padding:2px 8px;border-radius:8px;flex-shrink:0">&#10003; แตะแก้</span>'+
+      '</div>';
+  }).join('');
+}
+async function submitFertLog(){
+  clearE('flog-err');
+  const date=document.getElementById('flog-date').value;
+  const loc=document.getElementById('flog-loc').value.trim();
+  const fert=document.getElementById('flog-fert').value.trim();
+  const qty=document.getElementById('flog-qty').value.trim();
+  const unit=document.getElementById('flog-unit').value.trim();
+  const note=document.getElementById('flog-note').value.trim();
+  if(!date||!loc||!fert){showE('flog-err','กรุณากรอก: วันที่, แปลง และชื่อปุ๋ย');return;}
+  const rec={id:Date.now().toString()+Math.random().toString(36).slice(2,6),location:loc,fertilizer:fert,quantity:qty?parseFloat(qty):null,unit,note,loggedBy:user.displayName,timestamp:new Date().toISOString(),syncStatus:'pending'};
+  if(!fertLogCache[date])fertLogCache[date]=[];
+  fertLogCache[date].push(rec);
+  saveLogs();
+  await sendAPI({action:'addFertLog',date,...rec},'บันทึกปุ๋ยสำเร็จ',()=>{
+    document.getElementById('flog-fert').value='';
+    document.getElementById('flog-qty').value='';
+    document.getElementById('flog-unit').value='';
+    document.getElementById('flog-note').value='';
+    renderFertLogList();
+  });
+}
+function editFertLog(iso,id){
+  efIso=iso;efId=id;
+  const fl=(fertLogCache[iso]||[]).find(x=>x.id===id);
+  if(!fl){alert('ไม่พบบันทึก');return;}
+  document.getElementById('ef-date').textContent=thaiDate(parseISO(iso));
+  document.getElementById('ef-loc').value=fl.location||'';
+  document.getElementById('ef-fert').value=fl.fertilizer||'';
+  document.getElementById('ef-qty').value=fl.quantity||'';
+  document.getElementById('ef-unit').value=fl.unit||'';
+  document.getElementById('ef-note').value=fl.note||'';
+  _resetFertConfirmBtn(document.querySelector('#mod-editfertlog .mc'));
+  document.getElementById('mod-editfertlog').classList.add('open');
+}
+function _resetFertConfirmBtn(btn){
+  if(!btn)return;
+  delete btn.dataset.confirming;
+  btn.textContent='&#128465; ลบ';
+  btn.style.background='';btn.style.color='var(--rd)';btn.style.borderColor='#fca5a5';btn.style.fontWeight='';
+}
+async function saveFertLog(){
+  const loc=document.getElementById('ef-loc').value.trim();
+  const fert=document.getElementById('ef-fert').value.trim();
+  const qty=document.getElementById('ef-qty').value.trim();
+  const unit=document.getElementById('ef-unit').value.trim();
+  const note=document.getElementById('ef-note').value.trim();
+  if(!loc||!fert){alert('กรุณากรอก: แปลง และชื่อปุ๋ย');return;}
+  const idx=(fertLogCache[efIso]||[]).findIndex(x=>x.id===efId);
+  if(idx<0)return;
+  const old=fertLogCache[efIso][idx];
+  const updated={...old,location:loc,fertilizer:fert,quantity:qty?parseFloat(qty):null,unit,note};
+  fertLogCache[efIso][idx]=updated;
+  saveLogs();
+  closeMod('mod-editfertlog');
+  await sendAPI({action:'editFertLog',date:efIso,fertId:efId,...updated},'แก้ไขสำเร็จ',()=>{
+    if(currentScreen==='screen-fertlog')renderFertLogList();
+    else if(currentScreen==='screen-ldet')renderLdet();
+  });
+}
+async function deleteFertLog(){
+  const btn=document.querySelector('#mod-editfertlog .mc');
+  if(btn&&!btn.dataset.confirming){
+    btn.dataset.confirming='1';
+    btn.textContent='&#9888; กดอีกครั้งเพื่อยืนยันลบ';
+    btn.style.background='#fef2f2';btn.style.color='#dc2626';btn.style.borderColor='#dc2626';btn.style.fontWeight='700';
+    setTimeout(()=>{if(btn.dataset.confirming)_resetFertConfirmBtn(btn);},5000);
+    return;
+  }
+  if(btn)delete btn.dataset.confirming;
+  const idx=(fertLogCache[efIso]||[]).findIndex(x=>x.id===efId);
+  if(idx<0){alert('ไม่พบบันทึก');return;}
+  const deletedRec=fertLogCache[efIso][idx];
+  const deletedIso=efIso;
+  fertLogCache[efIso].splice(idx,1);
+  if(fertLogCache[efIso].length===0)delete fertLogCache[efIso];
+  saveLogs();
+  closeMod('mod-editfertlog');
+  showUndoToast('ลบบันทึกปุ๋ยแล้ว',()=>{
+    if(!fertLogCache[deletedIso])fertLogCache[deletedIso]=[];
+    fertLogCache[deletedIso].push(deletedRec);
+    saveLogs();
+    if(currentScreen==='screen-fertlog')renderFertLogList();
+    else if(currentScreen==='screen-ldet')renderLdet();
+  });
+  await sendAPI({action:'deleteFertLog',date:efIso,fertId:efId,timestamp:new Date().toISOString()},'ลบสำเร็จ',()=>{
+    if(currentScreen==='screen-fertlog')renderFertLogList();
+    else if(currentScreen==='screen-ldet')renderLdet();
+  });
 }
 
 

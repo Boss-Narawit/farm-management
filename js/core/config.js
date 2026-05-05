@@ -33,3 +33,4 @@ let logsCache={}; // employee logs
 let truckLogsCache={}; // truck trips
 let outsourceLogsCache={}; // outsource entries
 let holidays={}; // {'YYYY-MM-DD':'reason'}
+let fertLogCache={}; // fertilizer application logs

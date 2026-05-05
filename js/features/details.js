@@ -272,6 +272,11 @@ function locLastActivity(loc){
       if(!latest||iso>latest)latest=iso;
     }
   });
+  Object.keys(fertLogCache).forEach(iso=>{
+    if((fertLogCache[iso]||[]).some(fl=>fl.location===loc.name)){
+      if(!latest||iso>latest)latest=iso;
+    }
+  });
   return latest;
 }
 
@@ -302,6 +307,9 @@ function buildLocActivity(locName,y,m){
     (outsourceLogsCache[iso]||[]).filter(o=>o.location===locName).forEach(o=>{
       acts.push({type:'outsource',day:i,iso,person:o.contractor,task:o.task||'—',cost:o.fee||0,dayEq:0,note:o.note});
     });
+    (fertLogCache[iso]||[]).filter(fl=>fl.location===locName).forEach(fl=>{
+      acts.push({type:'fertilizer',day:i,iso,person:fl.loggedBy||'—',task:fl.fertilizer+(fl.quantity?' '+fl.quantity+' '+(fl.unit||''):''),cost:0,dayEq:0,note:fl.note});
+    });
   }
   acts.sort((a,b)=>b.day-a.day);
   return acts;
@@ -316,6 +324,7 @@ function renderLdet(){
   const totalCost=acts.reduce((s,a)=>s+a.cost,0);
   const empCount=acts.filter(a=>a.type==='employee').length;
   const osCount=acts.filter(a=>a.type==='outsource').length;
+  const fertCount=acts.filter(a=>a.type==='fertilizer').length;
   document.getElementById('ldet-name').textContent=loc.name+(loc.locId?' ['+loc.locId+']':'');
   document.getElementById('ldet-sub').textContent=[loc.locClass,loc.size?loc.size+' ไร่':''].filter(Boolean).join(' · ')||'แปลงเพาะปลูก';
   document.getElementById('ldet-entries').textContent=totalEntries;
@@ -361,18 +370,23 @@ function renderLdet(){
     '<div class="edet-cal-grid">'+ldetCells+'</div></div>';
   html+='<div style="display:flex;gap:14px;font-size:12px;color:var(--mu);margin-top:10px;align-items:center;justify-content:center">'+
     '<span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--g)"></span> พนักงาน '+empCount+'</span>'+
-    '<span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--am)"></span> เหมา '+osCount+'</span></div>';
+    '<span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--am)"></span> เหมา '+osCount+'</span>'+
+    (fertCount>0?'<span><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#558b2f"></span> ปุ๋ย '+fertCount+'</span>':'')+
+    '</div>';
   if(acts.length>0){
     html+='<div style="font-size:12px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin:18px 0 9px">รายการกิจกรรม '+acts.length+' รายการ</div>';
     html+='<div class="edet-task-list">';
     html+=acts.map(a=>{
       const isOS=a.type==='outsource';
-      const badge=isOS?'<span class="os-badge">เหมา</span>':'<span class="emp-badge-style">พนักงาน</span>';
+      const isFert=a.type==='fertilizer';
+      const badge=isFert?'<span style="font-size:11px;font-weight:700;background:#f1f8e9;color:#558b2f;padding:2px 8px;border-radius:8px">ปุ๋ย</span>':(isOS?'<span class="os-badge">เหมา</span>':'<span class="emp-badge-style">พนักงาน</span>');
       const cost=a.cost>0?'<div style="font-size:13px;font-weight:700;color:'+(isOS?'var(--ad)':'var(--gd)')+';margin-top:2px">'+a.cost.toLocaleString()+'฿</div>':'';
+      const dayColor=isFert?'#558b2f':(isOS?'var(--ad)':'var(--gd)');
+      const personEmoji=isFert?'&#127793;':(isOS?'&#128119;':'&#128104;');
       return '<div class="edet-task-row">'+
-        '<div class="edet-task-date"><div class="edet-task-day" style="color:'+(isOS?'var(--ad)':'var(--gd)')+'">'+a.day+'</div><div class="edet-task-mon">'+MO[m].substring(0,3)+'</div></div>'+
+        '<div class="edet-task-date"><div class="edet-task-day" style="color:'+dayColor+'">'+a.day+'</div><div class="edet-task-mon">'+MO[m].substring(0,3)+'</div></div>'+
         '<div class="edet-task-info"><div class="edet-task-name">'+escHtml(a.task)+'</div>'+
-        '<div class="edet-task-loc">'+(isOS?'👷':'👨')+' '+escHtml(a.person)+(a.duration?' · '+a.duration:'')+'</div>'+
+        '<div class="edet-task-loc">'+personEmoji+' '+escHtml(a.person)+(a.duration?' · '+a.duration:'')+'</div>'+
         (a.note?'<div class="edet-task-loc">'+escHtml(a.note)+'</div>':'')+'</div>'+
         '<div style="text-align:right;flex-shrink:0">'+badge+cost+'</div>'+
         '</div>';

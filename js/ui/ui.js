@@ -103,6 +103,15 @@ function renderDrop(inp,drop,type,q){
         '<div style="width:32px;height:32px;border-radius:8px;background:#fef3e2;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">&#128119;</div>'+
         '<div><div class="ci-main">'+escHtml(co.name)+'</div><div class="ci-sub">'+escHtml(co.specialty||co.phone||'')+'</div></div></div>';
     }).join('');
+  } else if(type==='fertilizers'){
+    items=(MD.fertilizers||[]).filter(f=>!ql||f.name.toLowerCase().includes(ql)||(f.formula||'').toLowerCase().includes(ql));
+    if(!items.length){el.innerHTML='<div class="ci-empty">ไม่พบปุ๋ย — พิมพ์เองได้</div>';return;}
+    el.innerHTML=items.map(f=>{
+      const sub=[f.formula,f.type,f.unit?'หน่วย: '+f.unit:''].filter(Boolean).join(' · ');
+      return '<div class="ci-item" data-val="'+escAttr(f.name)+'" data-unit="'+escAttr(f.unit||'')+'" onmousedown="selFertCombo(this,\''+inp+'\',\''+drop+'\')">'+
+        '<div style="width:32px;height:32px;border-radius:8px;background:#f1f8e9;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">&#127793;</div>'+
+        '<div><div class="ci-main">'+escHtml(f.name)+'</div><div class="ci-sub">'+escHtml(sub)+'</div></div></div>';
+    }).join('');
   }
 }
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -111,6 +120,15 @@ function selComboFromData(el,inp,drop){
   const v=el.getAttribute('data-val')||'';
   document.getElementById(inp).value=v;
   document.getElementById(drop).classList.remove('open');
+}
+function selFertCombo(el,inp,drop){
+  const v=el.getAttribute('data-val')||'';
+  const unit=el.getAttribute('data-unit')||'';
+  document.getElementById(inp).value=v;
+  document.getElementById(drop).classList.remove('open');
+  // Auto-fill unit field if it exists on the current form
+  const unitEl=document.getElementById('flog-unit')||document.getElementById('ef-unit');
+  if(unitEl&&unit&&!unitEl.value)unitEl.value=unit;
 }
 
 function dClose(d){setTimeout(()=>document.getElementById(d).classList.remove('open'),180);}

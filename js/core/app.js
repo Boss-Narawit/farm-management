@@ -42,6 +42,12 @@ function attachListeners(){
     holidays=JSON.parse(v);localStorage.setItem('fm_holidays',v);
     if(currentScreen==='screen-dash')renderDash();
   });
+  db.ref('fm_fertlogs').on('value',snap=>{
+    const v=snap.val();if(!v)return;
+    fertLogCache=JSON.parse(v);localStorage.setItem('fm_fertlogs',v);
+    if(currentScreen==='screen-fertlog')renderFertLogList();
+    else if(currentScreen==='screen-ldet')renderLdet();
+  });
 }
 
 // ===== INIT =====

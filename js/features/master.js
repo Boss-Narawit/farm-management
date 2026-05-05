@@ -10,6 +10,7 @@ function renderAll(){renderEmpList();renderTruckList();renderLocList();if(typeof
 function renderEmpList(){
   const el=document.getElementById('emp-list');
   if(!MD.employees.length){el.innerHTML='<div class="es">ยังไม่มีรายชื่อพนักงาน<br>กดปุ่มด้านบนเพื่อเพิ่ม</div>';return;}
+  const today=isoDate(new Date());
   // Sort active first, inactive at bottom with reduced opacity
   const sorted=[...MD.employees].sort((a,b)=>{
     const aA=(a.status||'active')==='active'?0:1;
@@ -19,11 +20,21 @@ function renderEmpList(){
   el.innerHTML=sorted.map(e=>{
     const inactive=(e.status||'active')!=='active';
     const opacityStyle=inactive?';opacity:.55;background:#f9fafb':'';
+    let permitBadge='';
+    if(e.permitExpiry){
+      const daysLeft=Math.floor((new Date(e.permitExpiry+'T00:00:00')-new Date(today+'T00:00:00'))/86400000);
+      if(daysLeft<0)permitBadge='<div style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fef2f2;color:var(--rd);margin-top:4px;display:inline-block">&#9888; ใบอนุญาตหมดอายุ</div>';
+      else if(daysLeft<=30)permitBadge='<div style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fef2f2;color:var(--rd);margin-top:4px;display:inline-block">&#9888; ใบอนุญาตหมด '+daysLeft+' วัน</div>';
+      else if(daysLeft<=90)permitBadge='<div style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fef3e2;color:var(--ad);margin-top:4px;display:inline-block">&#128337; ใบอนุญาตหมด '+daysLeft+' วัน</div>';
+      else permitBadge='<div style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--gl);color:var(--gd);margin-top:4px;display:inline-block">&#10003; ใบอนุญาตถึง '+thaiDate(e.permitExpiry)+'</div>';
+    }
+    const groupBadge=e.group?'<span style="font-size:11px;background:#f0ebff;color:#7c5cbf;padding:2px 7px;border-radius:10px;font-weight:600;margin-left:6px">'+escHtml(e.group)+'</span>':'';
     return '<div class="dc" style="cursor:pointer'+opacityStyle+'" onclick="openEmpMod(\''+e.id+'\')">'+
       '<div class="dav" style="background:#e8f5ee;color:#1a8f5c">'+escHtml(e.first[0]||'')+'</div>'+
       '<div style="flex:1;min-width:0">'+
-        '<div style="font-size:16px;font-weight:600">'+escHtml(empFull(e))+(inactive?' <span style="font-size:11px;background:#f3f4f6;color:var(--mu);padding:2px 7px;border-radius:10px;font-weight:600">ลาออก</span>':'')+'</div>'+
+        '<div style="font-size:16px;font-weight:600">'+escHtml(empFull(e))+groupBadge+(inactive?' <span style="font-size:11px;background:#f3f4f6;color:var(--mu);padding:2px 7px;border-radius:10px;font-weight:600">ลาออก</span>':'')+'</div>'+
         '<div style="font-size:13px;color:var(--mu);margin-top:2px">'+escHtml(empSub(e))+'</div>'+
+        permitBadge+
       '</div>'+
       '<button onclick="event.stopPropagation();toggleEmpStatus(\''+e.id+'\')" style="background:'+(inactive?'var(--gl)':'#f3f4f6')+';color:'+(inactive?'var(--gd)':'var(--mu)')+';border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:Sarabun,sans-serif;margin-right:6px;white-space:nowrap">'+(inactive?'กลับมาทำงาน':'ลาออก')+'</button>'+
       '<button class="ddel" onclick="event.stopPropagation();delEmp(\''+e.id+'\')">&#10005;</button>'+
@@ -60,12 +71,15 @@ function openEmpMod(id){
   document.getElementById('mod-emp-t').textContent=m?'แก้ไขพนักงาน':'เพิ่มพนักงานใหม่';
   document.getElementById('me-first').value=m?m.first:'';document.getElementById('me-last').value=m?m.last||'':'';
   document.getElementById('me-year').value=m?m.birthYear||'':'';document.getElementById('me-nat').value=m?m.nationality||'ไทย':'ไทย';
+  document.getElementById('me-passport').value=m?m.passportId||'':'';
+  document.getElementById('me-permit').value=m?m.permitExpiry||'':'';
+  document.getElementById('me-group').value=m?m.group||'':'';
   document.getElementById('mod-emp').classList.add('open');
 }
 function saveEmp(){
   const first=document.getElementById('me-first').value.trim();if(!first){alert('กรุณาใส่ชื่อพนักงาน');return;}
   const existing=editEId?MD.employees.find(e=>e.id===editEId):null;
-  const emp={id:editEId||Date.now().toString(),first,last:document.getElementById('me-last').value.trim(),birthYear:document.getElementById('me-year').value?parseInt(document.getElementById('me-year').value):null,nationality:document.getElementById('me-nat').value,status:existing?(existing.status||'active'):'active'};
+  const emp={id:editEId||Date.now().toString(),first,last:document.getElementById('me-last').value.trim(),birthYear:document.getElementById('me-year').value?parseInt(document.getElementById('me-year').value):null,nationality:document.getElementById('me-nat').value,status:existing?(existing.status||'active'):'active',passportId:document.getElementById('me-passport').value.trim()||undefined,permitExpiry:document.getElementById('me-permit').value||undefined,group:document.getElementById('me-group').value.trim()||undefined};
   if(editEId){const i=MD.employees.findIndex(e=>e.id===editEId);MD.employees[i]=emp;}else MD.employees.push(emp);
   saveMD();closeMod('mod-emp');renderEmpList();
 }

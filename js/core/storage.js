@@ -10,7 +10,7 @@ let db = null; // set by initFirebase() in app.js
 
 // ===== LOAD — reads localStorage on boot (fast, works offline) =====
 function loadMD(){const s=localStorage.getItem('fm_md');if(s)MD=JSON.parse(s);}
-function loadLogs(){const s=localStorage.getItem('fm_logs');if(s)logsCache=JSON.parse(s);const t=localStorage.getItem('fm_tlogs');if(t)truckLogsCache=JSON.parse(t);const o=localStorage.getItem('fm_oslogs');if(o)outsourceLogsCache=JSON.parse(o);const h=localStorage.getItem('fm_holidays');if(h)holidays=JSON.parse(h);}
+function loadLogs(){const s=localStorage.getItem('fm_logs');if(s)logsCache=JSON.parse(s);const t=localStorage.getItem('fm_tlogs');if(t)truckLogsCache=JSON.parse(t);const o=localStorage.getItem('fm_oslogs');if(o)outsourceLogsCache=JSON.parse(o);const h=localStorage.getItem('fm_holidays');if(h)holidays=JSON.parse(h);const fz=localStorage.getItem('fm_fertlogs');if(fz)fertLogCache=JSON.parse(fz);}
 
 // ===== SAVE — writes localStorage + Firebase (if configured) =====
 function saveMD(){
@@ -27,5 +27,7 @@ function saveLogs(){
   localStorage.setItem('fm_tlogs',t);
   localStorage.setItem('fm_oslogs',o);
   localStorage.setItem('fm_holidays',h);
-  if(db){db.ref('fm_logs').set(s);db.ref('fm_tlogs').set(t);db.ref('fm_oslogs').set(o);db.ref('fm_holidays').set(h);}
+  const fz=JSON.stringify(fertLogCache);
+  localStorage.setItem('fm_fertlogs',fz);
+  if(db){db.ref('fm_logs').set(s);db.ref('fm_tlogs').set(t);db.ref('fm_oslogs').set(o);db.ref('fm_holidays').set(h);db.ref('fm_fertlogs').set(fz);}
 }
