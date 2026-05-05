@@ -11,7 +11,7 @@ const DOW_S=['อา','จ','อ','พ','พฤ','ศ','ส'];
 
 function isoDate(d){return d.toISOString().split('T')[0];}
 function parseISO(s){if(!s||!/^\d{4}-\d{2}-\d{2}$/.test(s))return new Date(NaN);const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
-function thaiDate(d){return `${d.getDate()} ${MO[d.getMonth()]} ${d.getFullYear()+543}`;}
+function thaiDate(d){if(typeof d==='string')d=parseISO(d);return `${d.getDate()} ${MO[d.getMonth()]} ${d.getFullYear()+543}`;}
 
 function setTodayForms(){
   const v=isoDate(new Date());

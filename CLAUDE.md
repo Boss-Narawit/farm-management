@@ -143,13 +143,13 @@ After **any** code change, run these in order (paths are relative to repo root):
 for f in js/**/*.js; do node --check "$f" || echo "FAIL: $f"; done
 
 # 2. Cross-script integration test (most important)
-node /tmp/integration-test.js
+node tests/integration.js
 
 # 3. If editing index.html, verify script count
 grep -c "<script src=" index.html  # expect 14 (3 Firebase CDN + 11 local)
 ```
 
-**Integration test template** — write to `/tmp/integration-test.js`, run after major changes. The `firebase: undefined` mock makes `initFirebase()` skip gracefully (placeholder config check):
+**Integration test** lives at `tests/integration.js` — edit it in place when adding new features. The `firebase: undefined` mock makes `initFirebase()` skip gracefully (placeholder config check). Use `var` (not `const`/`let`) inside inline `vm.runInContext` snippets to avoid redeclaration errors across calls sharing the same context.
 
 ```javascript
 const vm = require('vm');
